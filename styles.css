@@ -103,15 +103,21 @@ main {
   pointer-events: none;
 }
 
+/* Strike marks ------------------------------------------------------------- */
+/* Widened from 10% to 16% and given a dark ring on top of the cream fill —
+   bigger and higher-contrast than the 17x17px/no-border marks previously
+   measured. Whether that reads as "hit here" is Ava's to judge, not mine. */
 .mark {
   position: absolute;
-  width: 10%;
+  width: 16%;
   aspect-ratio: 1;
   border-radius: 50%;
   background: #fff8ea;
+  border: 2px solid #5c4a28;
+  box-sizing: border-box;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 3s ease-out;
+  transition: opacity 1s ease-out;
 }
 
 .mark-centre {
@@ -126,13 +132,9 @@ main {
   transform: translate(-50%, -50%);
 }
 
-.bell.show-marks .mark {
+.rack.marks-shown .mark {
   opacity: 0.9;
   transition: none;
-}
-
-.bell.marks-fading .mark {
-  opacity: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {

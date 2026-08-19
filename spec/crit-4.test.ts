@@ -52,6 +52,14 @@ import { bells, HUANGZHONG_HZ, LU_TABLE } from "../src/tuning";
 import { mix } from "../src/strike";
 import { partials } from "../src/voice";
 import { createEngine } from "../src/audio";
+import {
+  INITIAL_STATE,
+  REVEAL_TIMEOUT_MS,
+  marksVisible,
+  rackVisible,
+  transition,
+  type State,
+} from "../src/reveal";
 
 const CENTS_TOLERANCE = 0.5;
 
@@ -398,6 +406,72 @@ describe("audio.ts: the AudioContext is created lazily", () => {
     FakeAudioContext.instances = 0;
     const engine = createEngine(FakeAudioContext as unknown as typeof AudioContext);
     expect(() => engine.strike(1, 0.5)).not.toThrow();
+  });
+});
+
+describe("reveal.ts", () => {
+  type Event = { type: "strike"; ceguGain: number } | { type: "tick" };
+  const CENTRE: Event = { type: "strike", ceguGain: 0 };
+  const CORNER: Event = { type: "strike", ceguGain: 0.9 };
+  const TICK: Event = { type: "tick" };
+
+  it("starts in a state that exposes exactly one interactive bell", () => {
+    expect(rackVisible(INITIAL_STATE)).toBe(false);
+  });
+
+  it("a first-strike event moves to a state where the marks are shown and the rack is still hidden", () => {
+    const next = transition(INITIAL_STATE, CENTRE, 0);
+    expect(marksVisible(next)).toBe(true);
+    expect(rackVisible(next)).toBe(false);
+  });
+
+  it("the rack does not appear in the marks-shown state, at any elapsed time below the timeout", () => {
+    let state: State = INITIAL_STATE;
+    state = transition(state, CENTRE, 0);
+    for (let t = 0; t < REVEAL_TIMEOUT_MS; t += 250) {
+      const next = transition(state, TICK, t);
+      expect(rackVisible(next), `t=${t}ms`).toBe(false);
+    }
+  });
+
+  it("a corner-strike event reveals the rack", () => {
+    let state: State = INITIAL_STATE;
+    state = transition(state, CENTRE, 0);
+    state = transition(state, CORNER, 500);
+    expect(rackVisible(state)).toBe(true);
+  });
+
+  it("a centre strike before the timeout does not reveal the rack", () => {
+    let state: State = INITIAL_STATE;
+    state = transition(state, CENTRE, 0);
+    state = transition(state, CENTRE, 500);
+    expect(rackVisible(state)).toBe(false);
+  });
+
+  it("reaching the timeout reveals the rack", () => {
+    let state: State = INITIAL_STATE;
+    state = transition(state, CENTRE, 0);
+    state = transition(state, TICK, REVEAL_TIMEOUT_MS);
+    expect(rackVisible(state)).toBe(true);
+  });
+
+  it("once revealed, no event returns it to a hidden state", () => {
+    let state: State = INITIAL_STATE;
+    state = transition(state, CENTRE, 0);
+    state = transition(state, TICK, REVEAL_TIMEOUT_MS);
+    expect(rackVisible(state)).toBe(true);
+    for (const event of [CENTRE, CORNER, TICK]) {
+      for (const t of [0, 1, REVEAL_TIMEOUT_MS, REVEAL_TIMEOUT_MS * 10]) {
+        expect(rackVisible(transition(state, event, t)), `${event.type} at t=${t}`).toBe(true);
+      }
+    }
+  });
+
+  it("the marks-shown state and the rack-appearing state are never both active at the same elapsed time", () => {
+    const allStates: State[] = ["waiting", "marksShown", "revealed"];
+    for (const state of allStates) {
+      expect(marksVisible(state) && rackVisible(state)).toBe(false);
+    }
   });
 });
 

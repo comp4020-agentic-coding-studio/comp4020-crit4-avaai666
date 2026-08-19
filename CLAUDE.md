@@ -57,6 +57,9 @@ If you find yourself adding a way for the player to be wrong, stop and ask.
 - src/strike.ts  strike position to mode mix. Pure.
 - src/voice.ts   frequency and bell to partial frequencies, gains, decays.
                  Pure. Returns numbers, not audio nodes.
+- src/reveal.ts  the opening reveal sequence as a state machine: states,
+                 events, transition(state, event, elapsedMs). Pure — no
+                 DOM, no timers.
 - src/audio.ts   the only file allowed to touch Web Audio.
 - src/ui.ts      the only file allowed to touch the DOM.
 - spec/          tests import the pure modules only.

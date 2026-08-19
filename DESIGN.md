@@ -203,6 +203,20 @@ are the contract; fix whichever of the two is wrong.
       // multipliers per partial come from the Timbre section above, not
       // from the tests — the tests only constrain ordering and range.
 
+    src/reveal.ts
+
+      export type State = "waiting" | "marksShown" | "revealed"
+      export type Event = { type: "strike"; ceguGain: number } | { type: "tick" }
+      export const INITIAL_STATE: State
+      export function transition(state: State, event: Event, elapsedMs: number): State
+      export function marksVisible(state: State): boolean
+      export function rackVisible(state: State): boolean
+      // elapsedMs is time since marksShown was entered; ignored elsewhere.
+      // waiting -> marksShown on any strike. marksShown -> revealed on a
+      // corner strike (ceguGain over the module's own threshold) or once
+      // elapsedMs reaches the module's own timeout. revealed is terminal:
+      // no event or elapsedMs moves it back out.
+
     src/audio.ts
 
       export function createEngine(
