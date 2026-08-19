@@ -51,6 +51,11 @@ If you find yourself adding a way for the player to be wrong, stop and ask.
 If a test needs jsdom to fake an AudioContext, the boundary is in the wrong
 place. Move the logic into a pure module instead.
 
+If you tell me something cannot be tested because it is a runtime
+property, that is a claim about where the boundary is, not about the
+property. Propose moving the boundary — inject the dependency — before
+you conclude it is untestable.
+
 ## Writing
 Ava writes the words. Use her text verbatim.
 - Do not merge her short sentences into paragraphs.

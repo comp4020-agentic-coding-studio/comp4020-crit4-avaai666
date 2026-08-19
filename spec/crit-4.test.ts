@@ -29,6 +29,14 @@
 //     bellIndex: number,                                        // 1..10
 //   ): { freq: number; gain: number; decay: number }[]
 //
+// src/audio.ts
+//   export function createEngine(
+//     AudioContextCtor?: typeof AudioContext,                   // default: globalThis.AudioContext
+//   ): { strike(bellIndex: number, x: number): void }
+//   createEngine() must not construct a context. The context is
+//   constructed lazily, on the first call to engine.strike(), and reused
+//   by every later strike.
+//
 // The page (built to dist/index.html):
 //   each bell is <button data-bell="1".."10">, carries a non-empty
 //   accessible name (text content or aria-label), and carries
@@ -43,6 +51,7 @@ import { describe, expect, it } from "vitest";
 import { bells, HUANGZHONG_HZ, LU_TABLE } from "../src/tuning";
 import { mix } from "../src/strike";
 import { partials } from "../src/voice";
+import { createEngine } from "../src/audio";
 
 const CENTS_TOLERANCE = 0.5;
 
@@ -298,6 +307,97 @@ describe("voice.ts", () => {
         }
       }
     }
+  });
+});
+
+// A fake AudioContext constructor: counts its own instantiations and hands
+// back stub nodes, so the real Web Audio graph is never touched here.
+class FakeAudioContext {
+  static instances = 0;
+  currentTime = 0;
+  destination = {};
+
+  constructor() {
+    FakeAudioContext.instances++;
+  }
+
+  createOscillator() {
+    return {
+      connect: () => {},
+      start: () => {},
+      stop: () => {},
+      frequency: {
+        value: 0,
+        setValueAtTime: () => {},
+        linearRampToValueAtTime: () => {},
+        exponentialRampToValueAtTime: () => {},
+      },
+    };
+  }
+
+  createGain() {
+    return {
+      connect: () => {},
+      gain: {
+        value: 0,
+        setValueAtTime: () => {},
+        linearRampToValueAtTime: () => {},
+        exponentialRampToValueAtTime: () => {},
+      },
+    };
+  }
+
+  createBuffer() {
+    return { getChannelData: () => new Float32Array(1) };
+  }
+
+  createBufferSource() {
+    return { connect: () => {}, start: () => {}, stop: () => {}, buffer: null };
+  }
+
+  createDynamicsCompressor() {
+    return {
+      connect: () => {},
+      threshold: { value: 0 },
+      knee: { value: 0 },
+      ratio: { value: 0 },
+      attack: { value: 0 },
+      release: { value: 0 },
+    };
+  }
+
+  resume() {
+    return Promise.resolve();
+  }
+}
+
+describe("audio.ts: the AudioContext is created lazily", () => {
+  it("does not construct a context when the engine is created", () => {
+    FakeAudioContext.instances = 0;
+    createEngine(FakeAudioContext as unknown as typeof AudioContext);
+    expect(FakeAudioContext.instances).toBe(0);
+  });
+
+  it("constructs the context exactly once, after the first strike", () => {
+    FakeAudioContext.instances = 0;
+    const engine = createEngine(FakeAudioContext as unknown as typeof AudioContext);
+    engine.strike(1, 0.5);
+    expect(FakeAudioContext.instances).toBe(1);
+  });
+
+  it("still has exactly one context after fifty strikes", () => {
+    FakeAudioContext.instances = 0;
+    const engine = createEngine(FakeAudioContext as unknown as typeof AudioContext);
+    for (let i = 0; i < 50; i++) {
+      engine.strike((i % 10) + 1, (i % 11) / 10);
+    }
+    expect(FakeAudioContext.instances).toBe(1);
+  });
+
+  it("returns from strike() without throwing before any context exists", () => {
+    FakeAudioContext.instances = 0;
+    const engine = createEngine(FakeAudioContext as unknown as typeof AudioContext);
+    expect(() => engine.strike(1, 0.5)).not.toThrow();
   });
 });
 
