@@ -580,6 +580,15 @@ describe("the page", () => {
     const media = doc?.querySelectorAll("audio, video") ?? [];
     expect(media.length).toBe(0);
   });
+
+  it("in the initial DOM, exactly one bell is focusable and nine are inert", () => {
+    const buttons = [...(doc?.querySelectorAll("button[data-bell]") ?? [])];
+    const inert = buttons.filter((b) => b.hasAttribute("inert"));
+    const focusable = buttons.filter((b) => !b.hasAttribute("inert"));
+    expect(inert.length).toBe(9);
+    expect(focusable.length).toBe(1);
+    expect(focusable[0]?.getAttribute("data-bell")).toBe("1");
+  });
 });
 
 // This only reads styles.css as text — vitest with jsdom has no layout

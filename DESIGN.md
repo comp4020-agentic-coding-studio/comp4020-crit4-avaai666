@@ -228,6 +228,9 @@ are the contract; fix whichever of the two is wrong.
 
     The page (built to dist/index.html)
 
+      In the initial DOM: exactly one bell carries no inert attribute
+      (bell 1) and the other nine carry inert.
+
       Each bell: <button data-bell="…"> — a real, focusable, never-disabled
       button, with a non-empty accessible name (text content or
       aria-label), carrying:
