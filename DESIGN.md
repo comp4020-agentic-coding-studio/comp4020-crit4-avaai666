@@ -107,6 +107,15 @@ few seconds. Then the other nine bells fade in.
 The browser requires a user gesture before audio can start. That
 requirement is the opening screen, not an obstacle to it.
 
+The AudioContext is constructed synchronously inside the pointerdown
+handler, and the first strike is scheduled synchronously in that same
+handler at ctx.currentTime. resume() is called and deliberately NOT
+awaited. Awaiting it puts at least one turn of the microtask queue, and
+in practice a frame, between the press and the sound. The brief names
+latency as something judged by hand, so the first strike is fired
+optimistically. If the context does not start, the sound is lost — that
+is the accepted cost.
+
 # Playing
 
 - Mouse and touch: pointerdown on a bell strikes it. The x position inside
@@ -117,6 +126,13 @@ requirement is the opening screen, not an obstacle to it.
   q w e r t y u i o p strike the same ten bells at their cegu point. The
   row above gives the tone above. Each bell is also a real focusable
   button; Enter and Space strike it at the centre.
+
+Keyboard handling reads event.code, not event.key. The mapping is to
+physical key positions — KeyA KeyS KeyD KeyF KeyG KeyH KeyJ KeyK KeyL
+Semicolon for zhenggu, KeyQ KeyW KeyE KeyR KeyT KeyY KeyU KeyI KeyO
+KeyP for cegu. The design's claim is that the row physically above
+gives the tone above, so the physical row is what must be read.
+Keydown events with event.repeat true are ignored.
 
 # Timbre
 

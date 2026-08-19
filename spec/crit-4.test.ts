@@ -32,7 +32,9 @@
 // The page (built to dist/index.html):
 //   each bell is <button data-bell="1".."10">, carries a non-empty
 //   accessible name (text content or aria-label), and carries
-//   data-key-zhenggu / data-key-cegu attributes naming its two keys.
+//   data-key-zhenggu / data-key-cegu attributes naming its two keys as
+//   KeyboardEvent.code values (e.g. "KeyA", "Semicolon") — physical key
+//   positions, not characters, per DESIGN.md.
 
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -343,14 +345,50 @@ describe("the page", () => {
     }
   });
 
-  it("maps all ten bells at both tones to twenty distinct keys", () => {
+  const ZHENGGU_CODES = [
+    "KeyA",
+    "KeyS",
+    "KeyD",
+    "KeyF",
+    "KeyG",
+    "KeyH",
+    "KeyJ",
+    "KeyK",
+    "KeyL",
+    "Semicolon",
+  ];
+  const CEGU_CODES = [
+    "KeyQ",
+    "KeyW",
+    "KeyE",
+    "KeyR",
+    "KeyT",
+    "KeyY",
+    "KeyU",
+    "KeyI",
+    "KeyO",
+    "KeyP",
+  ];
+  const ALL_CODES = [...ZHENGGU_CODES, ...CEGU_CODES];
+
+  it("keys the keyboard map on physical event.code values from the twenty listed", () => {
+    const buttons = doc?.querySelectorAll("button[data-bell]") ?? [];
+    for (const button of buttons) {
+      const zhengguCode = button.getAttribute("data-key-zhenggu");
+      const ceguCode = button.getAttribute("data-key-cegu");
+      expect(zhengguCode, "data-key-zhenggu").not.toBeNull();
+      expect(ceguCode, "data-key-cegu").not.toBeNull();
+      expect(ALL_CODES.includes(zhengguCode as string), zhengguCode ?? "").toBe(true);
+      expect(ALL_CODES.includes(ceguCode as string), ceguCode ?? "").toBe(true);
+    }
+  });
+
+  it("covers all ten bells at both tones with twenty distinct codes, no duplicates", () => {
     const buttons = doc?.querySelectorAll("button[data-bell]") ?? [];
     const zhengguKeys = [...buttons].map((b) => b.getAttribute("data-key-zhenggu"));
     const ceguKeys = [...buttons].map((b) => b.getAttribute("data-key-cegu"));
     const allKeys = [...zhengguKeys, ...ceguKeys];
 
-    expect(zhengguKeys.every((k) => !!k)).toBe(true);
-    expect(ceguKeys.every((k) => !!k)).toBe(true);
     expect(allKeys.length).toBe(20);
     expect(new Set(allKeys).size).toBe(20);
   });
