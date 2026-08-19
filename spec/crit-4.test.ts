@@ -581,3 +581,48 @@ describe("the page", () => {
     expect(media.length).toBe(0);
   });
 });
+
+// This only reads styles.css as text — vitest with jsdom has no layout
+// engine, so nothing here (or in any test) can check that the reflow
+// actually renders as two columns with >=44px strike zones. That was
+// checked by hand at 390x844.
+describe("styles.css: mobile reflow (stylesheet text only, not rendering)", () => {
+  const css = readFileSync(resolve("styles.css"), "utf8");
+
+  function mediaBlocks(source: string): { condition: string; body: string }[] {
+    const blocks: { condition: string; body: string }[] = [];
+    const re = /@media([^{]*)\{/g;
+    let match: RegExpExecArray | null;
+    while ((match = re.exec(source))) {
+      const start = match.index + match[0].length;
+      let depth = 1;
+      let i = start;
+      while (i < source.length && depth > 0) {
+        if (source[i] === "{") depth++;
+        else if (source[i] === "}") depth--;
+        i++;
+      }
+      blocks.push({ condition: match[1], body: source.slice(start, i - 1) });
+      re.lastIndex = i;
+    }
+    return blocks;
+  }
+
+  const twoColumnBlock = mediaBlocks(css).find(
+    (b) => /max-width/.test(b.condition) && /\.rack[^}]*repeat\(\s*2\s*,/s.test(b.body),
+  );
+
+  it("has a max-width media query that sets the rack to two columns", () => {
+    expect(twoColumnBlock, "no max-width media query sets .rack to repeat(2, ...)").toBeTruthy();
+  });
+
+  it("gives the two-column rack a bell minimum width of at least 88px, so two 44px zones fit", () => {
+    const widths = [...(twoColumnBlock?.body.matchAll(/minmax\(\s*(\d+)px/g) ?? [])].map((m) =>
+      Number(m[1]),
+    );
+    expect(widths.length, "no minmax(...px, ...) token in that block").toBeGreaterThan(0);
+    expect(Math.min(...widths), `minmax widths found: ${widths.join(", ")}`).toBeGreaterThanOrEqual(
+      88,
+    );
+  });
+});

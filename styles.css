@@ -43,9 +43,13 @@ main {
   margin-top: 2rem;
 }
 
-@media (max-width: 480px) {
+/* DESIGN.md: two columns and >=44px strike zones by 390px wide. Measured
+   failure at 495px with the old 480px cutoff (still five columns, ~26px
+   zones) — this checks the stylesheet text only; the rendering itself is
+   checked by hand at 390x844 and cannot be checked by any test here. */
+@media (max-width: 600px) {
   .rack {
-    grid-template-columns: repeat(2, minmax(44px, 1fr));
+    grid-template-columns: repeat(2, minmax(88px, 1fr));
   }
 }
 
