@@ -156,3 +156,83 @@ Treat it as inferred until checked.
 
 No score. No timer. No target melody. No fail state. No settings. No
 tutorial. No instruction paragraph. No emoji.
+
+# Module contract
+
+Derived from spec/crit-4.test.ts — this is what the tests already require,
+not a new decision. If the code and this section ever disagree, the tests
+are the contract; fix whichever of the two is wrong.
+
+    src/tuning.ts
+
+      export const HUANGZHONG_HZ: number
+
+      export const LU_TABLE: {
+        name: string;   // Chinese lü name, e.g. "黄钟"
+        num: number;    // exact integer numerator, e.g. 2187
+        den: number;    // exact integer denominator, e.g. 2048
+        ratio: number;  // num / den
+      }[]
+      // all 12 lü, huangzhong..yingzhong, ascending, num/den must satisfy
+      // num/den === ratio exactly.
+
+      export const bells: {
+        zhenggu: { name: string; ratio: number; freq: number };
+        cegu:    { name: string; ratio: number; freq: number };
+      }[]
+      // length 10, index 0 = bell 1. freq is ratio * HUANGZHONG_HZ (fixed
+      // by the Tuning section above; no test asserts this multiplication
+      // directly, only its consequences — ordering and the x2 relationship
+      // between bells 1-5 and 6-10).
+
+    src/strike.ts
+
+      export function mix(x: number): { zhenggu: number; cegu: number }
+      // bell-agnostic — takes only the strike position, not a bell index.
+      // Clamps for x < 0 and x > 1 rather than throwing.
+
+    src/voice.ts
+
+      export function partials(
+        fundamentalHz: number,
+        bellIndex: number,   // 1..10
+      ): { freq: number; gain: number; decay: number }[]
+      // ps[0] is the fundamental: ps[0].freq === fundamentalHz exactly.
+      // gains strictly descending, decays strictly descending (higher
+      // partials decay faster). Count and the specific ratios/gains/decay
+      // multipliers per partial come from the Timbre section above, not
+      // from the tests — the tests only constrain ordering and range.
+
+    src/audio.ts
+
+      export function createEngine(
+        AudioContextCtor?: typeof AudioContext,   // default: globalThis.AudioContext
+      ): { strike(bellIndex: number, x: number): void }
+      // createEngine() itself must not construct a context. The context
+      // is constructed lazily, on the first call to engine.strike(), and
+      // reused by every later strike, however many.
+
+    The page (built to dist/index.html)
+
+      Each bell: <button data-bell="…"> — a real, focusable, never-disabled
+      button, with a non-empty accessible name (text content or
+      aria-label), carrying:
+        data-key-zhenggu="<KeyboardEvent.code>"
+        data-key-cegu="<KeyboardEvent.code>"
+      Both values must be among the twenty physical codes in the Playing
+      section above; across all ten bells the twenty values are distinct.
+      No <audio> or <video> element anywhere. No text or markup anywhere
+      in the body matching: score, points, level, lives, wrong, correct,
+      retry, game over.
+
+Open questions the tests don't decide:
+
+  - The exact string(s) held in data-bell — only that ten buttons match
+    the selector `button[data-bell]`, not that the values are "1".."10",
+    zero-indexed, or in any particular DOM order.
+  - Whether createEngine()'s default-argument path (omitting
+    AudioContextCtor and falling back to globalThis.AudioContext) is
+    exercised anywhere — every current test passes a fake constructor
+    explicitly.
+  - Whether the Engine returned by createEngine exposes anything beyond
+    strike() — nothing else is tested.
