@@ -21,6 +21,26 @@ to 80 units at the base, bottom rim as a single quadratic Bézier control
 point at (50, 76) giving a curve midpoint of (50, 84), 24 bosses in four
 6-boss panels) are arbitrary numbers I set, not measurements of a real bell.
 
+## Link-preview card (public/card.png)
+
+Decorative and inferred, not sourced. Replaced the starter-template
+placeholder image with a 1200x630 PNG built by a one-off script (not
+committed — run through `node`, not part of the app), not a screenshot
+or a rendering of the deployed page.
+
+The image reuses the exact same bell-shape coordinates as index.html's
+#bell-shape symbol (see "Bell silhouette" above), scaled by k=2.6, drawn
+as flat fills with no stroke, no anti-aliasing, and no text — the meta
+description tag carries the words, not the image. Colours are the same
+five hex values already in styles.css (#f4f1ea background, #3b2a17
+frame border/divider/nub, #6b4a2b frame fill, #8a6d3b bell outline,
+#6b542e shank). Checked numerically, not visually: decoded the PNG back
+into raw pixel data and confirmed pixel(2,2), pixel(160,95) and
+pixel(600,130) exactly match the intended hex values, and that a
+1200x630 grid sample contains exactly five distinct colours. Whether
+the composition reads as three bells on a rack is not something I can
+check.
+
 ## Rack frame (styles.css .rack-frame)
 
 Decorative and inferred, not sourced. Meant to read as one stand the bells
