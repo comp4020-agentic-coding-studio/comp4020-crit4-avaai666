@@ -17,6 +17,19 @@ latency, balance or feel.
 - If I ask whether something sounds right, the correct answer is that you
   cannot tell, followed by what I should listen for.
 
+## You cannot see either
+You have no browser and no rendered page. You cannot judge layout,
+proportion, silhouette, contrast, or whether something reads as the
+object it is meant to be.
+
+- Never write that something "looks like", "looks good", or "reads as"
+  anything.
+- When a change affects shape, layout, spacing, colour or timing you
+  may state what you set, in numbers, and nothing about the result.
+- Evidence: you drew the bell silhouette from the phrase "lens-shaped
+  cross-section" in DESIGN.md and produced a shape pointed at both
+  ends. A cross-section is not an elevation. You had no way to notice.
+
 ## Never say done
 "Done", "complete", "all working", "tests pass" without pasted output are
 forbidden. Paste the real terminal output. If a command failed, paste the
