@@ -30,56 +30,32 @@
       <h1 class="sr-only">Bianzhong</h1>
 
       <!-- Shared bell silhouette, referenced by every button below so the
-           markup isn't repeated ten times. -->
+           markup isn't repeated ten times. Front elevation: shank at top,
+           body widening downward, concave bottom rim, bosses inside the
+           outline in four panels either side of the dividers. Decorative
+           and inferred — see FACT-CHECK.md. -->
       <svg width="0" height="0" style="position: absolute" aria-hidden="true">
         <defs>
           <symbol id="bell-shape" viewBox="0 0 100 130">
-            <path
-              class="bell-outline"
-              d="M50 6 A70 90 0 0 0 50 124 A70 90 0 0 0 50 6 Z"
-            />
+            <rect class="bell-shank" x="44" y="0" width="12" height="18" />
+            <path class="bell-outline" d="M32 16 L68 16 L90 92 Q50 76 10 92 Z" />
+            <line class="bell-divider" x1="50" y1="16" x2="50" y2="82" />
+            <line class="bell-divider" x1="22" y1="53" x2="78" y2="53" />
             <g class="bell-nubs">
-              <circle cx="25" cy="18" r="2.2" />
-              <circle cx="35" cy="18" r="2.2" />
-              <circle cx="45" cy="18" r="2.2" />
-              <circle cx="55" cy="18" r="2.2" />
-              <circle cx="65" cy="18" r="2.2" />
-              <circle cx="75" cy="18" r="2.2" />
-              <circle cx="25" cy="30" r="2.2" />
-              <circle cx="35" cy="30" r="2.2" />
-              <circle cx="45" cy="30" r="2.2" />
-              <circle cx="55" cy="30" r="2.2" />
-              <circle cx="65" cy="30" r="2.2" />
-              <circle cx="75" cy="30" r="2.2" />
-              <circle cx="25" cy="42" r="2.2" />
-              <circle cx="35" cy="42" r="2.2" />
-              <circle cx="45" cy="42" r="2.2" />
-              <circle cx="55" cy="42" r="2.2" />
-              <circle cx="65" cy="42" r="2.2" />
-              <circle cx="75" cy="42" r="2.2" />
-              <circle cx="25" cy="54" r="2.2" />
-              <circle cx="35" cy="54" r="2.2" />
-              <circle cx="45" cy="54" r="2.2" />
-              <circle cx="55" cy="54" r="2.2" />
-              <circle cx="65" cy="54" r="2.2" />
-              <circle cx="75" cy="54" r="2.2" />
-              <circle cx="25" cy="66" r="2.2" />
-              <circle cx="35" cy="66" r="2.2" />
-              <circle cx="45" cy="66" r="2.2" />
-              <circle cx="55" cy="66" r="2.2" />
-              <circle cx="65" cy="66" r="2.2" />
-              <circle cx="75" cy="66" r="2.2" />
-              <circle cx="25" cy="78" r="2.2" />
-              <circle cx="35" cy="78" r="2.2" />
-              <circle cx="45" cy="78" r="2.2" />
-              <circle cx="55" cy="78" r="2.2" />
-              <circle cx="65" cy="78" r="2.2" />
-              <circle cx="75" cy="78" r="2.2" />
+              <circle cx="30" cy="28" r="2.2" /> <circle cx="38" cy="28" r="2.2" /> <circle cx="46" cy="28" r="2.2" />
+              <circle cx="30" cy="36" r="2.2" /> <circle cx="38" cy="36" r="2.2" /> <circle cx="46" cy="36" r="2.2" />
+              <circle cx="54" cy="28" r="2.2" /> <circle cx="62" cy="28" r="2.2" /> <circle cx="70" cy="28" r="2.2" />
+              <circle cx="54" cy="36" r="2.2" /> <circle cx="62" cy="36" r="2.2" /> <circle cx="70" cy="36" r="2.2" />
+              <circle cx="25" cy="62" r="2.2" /> <circle cx="35" cy="62" r="2.2" /> <circle cx="45" cy="62" r="2.2" />
+              <circle cx="25" cy="70" r="2.2" /> <circle cx="35" cy="70" r="2.2" /> <circle cx="45" cy="70" r="2.2" />
+              <circle cx="55" cy="62" r="2.2" /> <circle cx="65" cy="62" r="2.2" /> <circle cx="75" cy="62" r="2.2" />
+              <circle cx="55" cy="70" r="2.2" /> <circle cx="65" cy="70" r="2.2" /> <circle cx="75" cy="70" r="2.2" />
             </g>
           </symbol>
         </defs>
       </svg>
 
+      <div class="rack-frame">
       <div class="rack" id="rack">
         <button
           type="button"
@@ -221,6 +197,7 @@
           <span class="mark mark-corner" aria-hidden="true"></span>
           <span class="bell-label" lang="zh">南吕</span>
         </button>
+      </div>
       </div>
     </main>
     <script type="module" src="./src/ui.ts"></script>

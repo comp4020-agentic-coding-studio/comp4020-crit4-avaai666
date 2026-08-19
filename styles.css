@@ -32,7 +32,17 @@ main {
   border: 0;
 }
 
-/* The rack --------------------------------------------------------------- */
+/* The rack frame ---------------------------------------------------------- */
+/* Decorative only — see FACT-CHECK.md. Meant to read as one stand the
+   bells hang from, not ten separate floating objects. */
+
+.rack-frame {
+  padding: 2.5rem 1.5rem 1.5rem;
+  border: 6px solid #3b2a17;
+  border-top-width: 14px;
+  border-radius: 4px;
+  background: #6b4a2b;
+}
 
 .rack {
   display: grid;
@@ -90,14 +100,26 @@ main {
   height: 100%;
 }
 
-.bell-outline {
-  fill: #8a6d3b;
-  stroke: #5c4a28;
+.bell-shank {
+  fill: #6b542e;
+  stroke: #3b2a17;
   stroke-width: 1.5;
 }
 
+.bell-outline {
+  fill: #8a6d3b;
+  stroke: #3b2a17;
+  stroke-width: 1.5;
+}
+
+.bell-divider {
+  stroke: #3b2a17;
+  stroke-width: 1;
+  opacity: 0.6;
+}
+
 .bell-nubs circle {
-  fill: #5c4a28;
+  fill: #3b2a17;
 }
 
 .bell-label {
@@ -108,16 +130,17 @@ main {
 }
 
 /* Strike marks ------------------------------------------------------------- */
-/* Widened from 10% to 16% and given a dark ring on top of the cream fill —
-   bigger and higher-contrast than the 17x17px/no-border marks previously
-   measured. Whether that reads as "hit here" is Ava's to judge, not mine. */
+/* Widened from 10% to 16% and given a dark ring on top of the cream fill,
+   set against the bronze body fill (#8a6d3b) and stroke (#3b2a17) — bigger
+   and higher-contrast than the 17x17px/no-border marks previously measured.
+   Whether that reads as "hit here" is Ava's to judge, not mine. */
 .mark {
   position: absolute;
   width: 16%;
   aspect-ratio: 1;
   border-radius: 50%;
   background: #fff8ea;
-  border: 2px solid #5c4a28;
+  border: 2px solid #3b2a17;
   box-sizing: border-box;
   opacity: 0;
   pointer-events: none;
