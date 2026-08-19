@@ -9,7 +9,12 @@
 //
 // src/tuning.ts
 //   export const HUANGZHONG_HZ: number
-//   export const LU_TABLE: { name: string; ratio: number }[]   // the lü used in this design
+//   export const LU_TABLE: {
+//     name: string;
+//     num: number;    // exact integer numerator, e.g. 2187
+//     den: number;    // exact integer denominator, e.g. 2048
+//     ratio: number;  // num / den
+//   }[]                                                         // all 12 lü, huangzhong..yingzhong
 //   export const bells: {
 //     zhenggu: { name: string; ratio: number; freq: number };
 //     cegu:    { name: string; ratio: number; freq: number };
@@ -121,6 +126,82 @@ describe("tuning.ts", () => {
       expect(bell.cegu.name.length).toBeGreaterThan(0);
       expect(hasChinese(bell.zhenggu.name)).toBe(true);
       expect(hasChinese(bell.cegu.name)).toBe(true);
+    }
+  });
+});
+
+describe("tuning.ts: the twelve-lü table", () => {
+  function byName(name: string) {
+    const lu = LU_TABLE.find((l) => l.name === name);
+    if (!lu) throw new Error(`missing lü: ${name}`);
+    return lu;
+  }
+
+  function isPowerOf(base: number, n: number): boolean {
+    if (n < 1) return false;
+    let r = n;
+    while (r % base === 0) r /= base;
+    return r === 1;
+  }
+
+  it("has exactly 12 entries", () => {
+    expect(LU_TABLE.length).toBe(12);
+  });
+
+  it("is strictly ascending and lies entirely in [1, 2)", () => {
+    for (const lu of LU_TABLE) {
+      expect(lu.ratio).toBeGreaterThanOrEqual(1);
+      expect(lu.ratio).toBeLessThan(2);
+    }
+    for (let i = 0; i < LU_TABLE.length - 1; i++) {
+      expect(LU_TABLE[i].ratio).toBeLessThan(LU_TABLE[i + 1].ratio);
+    }
+  });
+
+  it("is exactly 3^k / 2^m for every entry, for some integers k, m", () => {
+    for (const lu of LU_TABLE) {
+      expect(lu.num / lu.den, lu.name).toBe(lu.ratio);
+      expect(isPowerOf(3, lu.num), `${lu.name} numerator ${lu.num}`).toBe(true);
+      expect(isPowerOf(2, lu.den), `${lu.name} denominator ${lu.den}`).toBe(true);
+    }
+  });
+
+  it("closes under a fifth (x 3/2, reduced into the octave) for every lü except zhonglü", () => {
+    const zhonglü = byName("仲吕");
+    for (const lu of LU_TABLE) {
+      if (lu === zhonglü) continue;
+      const next = reduceToOctave(lu.ratio * (3 / 2));
+      const match = LU_TABLE.some((candidate) => candidate.ratio === next);
+      expect(match, `${lu.name} x 3/2 reduced = ${next}`).toBe(true);
+    }
+  });
+
+  it("the Pythagorean comma: a fifth up from zhonglü does not close the circle", () => {
+    const zhonglü = byName("仲吕");
+    const wolf = reduceToOctave(zhonglü.ratio * (3 / 2));
+    expect(wolf).toBe(531441 / 524288);
+    const huangzhong = byName("黄钟");
+    expect(wolf).not.toBe(huangzhong.ratio);
+  });
+
+  it("uses exactly these five zhenggu pitch classes", () => {
+    const names = new Set(bells.map((b) => b.zhenggu.name));
+    expect(names).toEqual(new Set(["黄钟", "太簇", "姑洗", "林钟", "南吕"]));
+  });
+
+  it("uses exactly these five cegu pitch classes", () => {
+    const names = new Set(bells.map((b) => b.cegu.name));
+    expect(names).toEqual(new Set(["姑洗", "蕤宾", "林钟", "应钟", "黄钟"]));
+  });
+
+  it("leaves dalü, jiazhong, zhonglü, yize and wuyi in the table but unused by any bell", () => {
+    const unused = ["大吕", "夹钟", "仲吕", "夷则", "无射"];
+    for (const name of unused) {
+      expect(LU_TABLE.some((lu) => lu.name === name), `${name} missing from LU_TABLE`).toBe(true);
+    }
+    const used = new Set([...bells.map((b) => b.zhenggu.name), ...bells.map((b) => b.cegu.name)]);
+    for (const name of unused) {
+      expect(used.has(name), `${name} unexpectedly struck by a bell`).toBe(false);
     }
   });
 });
