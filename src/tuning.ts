@@ -42,31 +42,32 @@ function tone(name: string, num: number, den: number): Tone {
   return { name, ratio, freq: ratio * HUANGZHONG_HZ };
 }
 
-function doubleTone(t: Tone): Tone {
-  return { name: t.name, ratio: t.ratio * 2, freq: t.freq * 2 };
-}
-
 interface Bell {
   zhenggu: Tone;
   cegu: Tone;
 }
 
-// Bells 1-5: the base octave. zhenggu carries the pentatonic scale
-// (宫商角徵羽); cegu carries the two lü outside it — ruibin, yingzhong — a
-// third above.
-const baseBells: Bell[] = [
-  { zhenggu: tone("黄钟", 1, 1), cegu: tone("姑洗", 81, 64) },
-  { zhenggu: tone("太簇", 9, 8), cegu: tone("蕤宾", 729, 512) },
-  { zhenggu: tone("姑洗", 81, 64), cegu: tone("林钟", 3, 2) },
-  { zhenggu: tone("林钟", 3, 2), cegu: tone("应钟", 243, 128) },
-  { zhenggu: tone("南吕", 27, 16), cegu: tone("黄钟", 2, 1) },
-];
-
-// Bells 6-10: bells 1-5 an octave up. Ratio and freq both x2, exactly.
+// Twelve bells, all twelve lü. Lower tier (1-6) carries the six lu (yang,
+// even powers of 3 in the fifth-chain); upper tier (7-12) carries the six
+// lü (yin, odd powers of 3) — see DESIGN.md. Consecutive zhenggu within
+// either tier are exactly a whole tone (9/8) apart; column i's upper-tier
+// zhenggu is not an octave of column i's lower-tier zhenggu — the two
+// tiers are separate whole-tone scales, not one scale doubled. Every cegu
+// is its zhenggu's own lü row times a major third (81/64) or minor third
+// (32/27) — exact fractions from DESIGN.md, not recomputed here.
 export const bells: Bell[] = [
-  ...baseBells,
-  ...baseBells.map((b) => ({
-    zhenggu: doubleTone(b.zhenggu),
-    cegu: doubleTone(b.cegu),
-  })),
+  // Lower tier: the six lu.
+  { zhenggu: tone("黄钟", 1, 1), cegu: tone("姑洗", 81, 64) }, // 1 huangzhong
+  { zhenggu: tone("太簇", 9, 8), cegu: tone("蕤宾", 729, 512) }, // 2 taicu
+  { zhenggu: tone("姑洗", 81, 64), cegu: tone("夷则", 6561, 4096) }, // 3 guxian
+  { zhenggu: tone("蕤宾", 729, 512), cegu: tone("无射", 59049, 32768) }, // 4 ruibin
+  { zhenggu: tone("夷则", 6561, 4096), cegu: tone("应钟", 243, 128) }, // 5 yize
+  { zhenggu: tone("无射", 59049, 32768), cegu: tone("大吕", 2187, 1024) }, // 6 wuyi
+  // Upper tier: the six lü.
+  { zhenggu: tone("大吕", 2187, 2048), cegu: tone("仲吕", 177147, 131072) }, // 7 dalu
+  { zhenggu: tone("夹钟", 19683, 16384), cegu: tone("蕤宾", 729, 512) }, // 8 jiazhong
+  { zhenggu: tone("仲吕", 177147, 131072), cegu: tone("夷则", 6561, 4096) }, // 9 zhonglu
+  { zhenggu: tone("林钟", 3, 2), cegu: tone("应钟", 243, 128) }, // 10 linzhong
+  { zhenggu: tone("南吕", 27, 16), cegu: tone("黄钟", 2, 1) }, // 11 nanlu
+  { zhenggu: tone("应钟", 243, 128), cegu: tone("夹钟", 19683, 8192) }, // 12 yingzhong
 ];

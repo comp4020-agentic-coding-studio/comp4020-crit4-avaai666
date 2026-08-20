@@ -5,7 +5,17 @@
 body {
   margin: 0;
   padding: 1.5rem;
-  min-height: 100vh;
+  /* Real mobile browser chrome (address bar, gesture-nav bar) commonly
+     reappears right at the scroll boundary without moving scrollY — the
+     page really did scroll to its true end, but the last strip of the
+     document gets visually covered by the browser's own UI, not clipped by
+     anything in the layout. A fixed-size headless viewport can't reproduce
+     this, so it can't be measured here — this is a safety margin against
+     it, not a proven fix: enough blank space after the last real content
+     that a reappearing toolbar covers padding, not the last bells or the
+     footer buttons. */
+  padding-bottom: 7rem;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   font-family: system-ui, sans-serif;
@@ -23,11 +33,54 @@ header {
   flex: 0 0 auto;
 }
 
+/* No vertical centring anywhere in this page — see FACT-CHECK.md "Vertical
+   centring and scroll reachability" for the two regressions this caused
+   (align-items: center, then margin: auto on .rack-frame, both let content
+   taller than its container overflow upward past the document's own flow
+   origin, which scrolling can never reach). main is plain block flow:
+   flex: 1 only claims the leftover height in body's column layout, it does
+   not position anything within it. The rack sits wherever ordinary block
+   flow puts it — right after header, in a page that scrolls normally — and
+   .rack-frame below centres itself horizontally only. On a tall desktop
+   screen the rack sits nearer the top than the middle; that's the accepted
+   trade, not a bug (a rack that hangs from the top of the frame is closer
+   to the object anyway). */
 main {
   flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+}
+
+footer {
+  flex: 0 0 auto;
+  text-align: center;
+}
+
+footer p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #4a4a4a;
+}
+
+footer p + p {
+  margin-top: 0.5rem;
+}
+
+/* about.html's prose. Overrides main's flex/justify-content entirely
+   (display: block) rather than swapping flex-direction to column and
+   reaching for align-items or justify-content there — either would
+   revive the exact overflow-above-the-scroll-origin bug FACT-CHECK.md's
+   "Vertical centring" section describes, just on the other axis, for
+   any about-page content taller than the viewport. max-width and
+   padding are guessed numbers, not measured or sourced. */
+main.about-content {
+  display: block;
+  max-width: 640px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 1rem 0;
+}
+
+main.about-content h1 {
+  margin-top: 0;
 }
 
 .sr-only {
@@ -44,57 +97,193 @@ main {
 
 /* The rack frame ---------------------------------------------------------- */
 /* Decorative only — see FACT-CHECK.md. Meant to read as one stand the
-   bells hang from, not ten separate floating objects. */
+   bells hang from, not twelve separate floating objects.
+
+   Before the first strike, only bell 1 is display:block (see .bell
+   below) — auto-fit collapses every other (empty) column, so the grid's
+   own footprint shrinks to one bell and this padding wraps only that,
+   not the full twelve-bell rack. */
 
 .rack-frame {
-  padding: 2.5rem 1.5rem 1.5rem;
+  /* position: relative makes this the containing block for .mallet
+     (position: absolute, below) — .mallet used to sit inside .rack and
+     rely on *its* position: relative, but .rack must contain bell cells
+     and nothing else (a stray sibling desyncs :nth-child — see the bug
+     this fixed, FACT-CHECK.md "Rack tier order"). --frame-pad-x/-y feed
+     both the real padding below and .mallet's top/left, so its local
+     origin lands exactly on .rack's top-left (the padding box, where
+     .mallet's containing block starts, plus this same padding, is
+     exactly the content box .rack occupies) without duplicating the
+     number.
+
+     Captions now live inside each grid cell (.bell-caption, pinned to the
+     bottom of a fixed-height .bell-cell — see below), not overflowing past
+     it, so this padding no longer needs a larger bottom edge to make room
+     for them. Symmetric on all four sides.
+
+     margin-inline: auto centres this horizontally only — no margin-block,
+     auto or otherwise. Vertical position comes entirely from where
+     ordinary block flow puts this box inside main; see FACT-CHECK.md
+     "Vertical centring and scroll reachability" for why a vertical auto
+     margin here was still the same bug as align-items: center, just moved
+     one element down. */
+  margin-inline: auto;
+  position: relative;
+  --frame-pad-y: 2.5rem;
+  --frame-pad-x: 1.5rem;
+  padding: var(--frame-pad-y) var(--frame-pad-x);
   border: 6px solid #3b2a17;
   border-top-width: 14px;
   border-radius: 4px;
-  background: #6b4a2b;
+  /* Metal finish (D2): lighter top edge, darker toward the bottom. The
+     --frame-gradient-* custom properties are set by src/ui.ts from
+     src/color.ts's FRAME_GRADIENT_TOP/FRAME_GRADIENT_BOTTOM (single source
+     of truth); the fallback values here are that same pair, used before
+     ui.ts runs. See FACT-CHECK.md "Metal finish" for why this one div
+     uses a CSS gradient while the bell (already SVG) uses an SVG one. */
+  background: linear-gradient(180deg, var(--frame-gradient-top, #8b6038), var(--frame-gradient-bottom, #362516));
 }
 
+/* The rack -------------------------------------------------------------- */
+/* Columns size themselves from the bells that are actually in them
+   (auto-fit collapses empty tracks), not from a fixed count — so this
+   also drives the cold-open frame-fit above and the responsive reflow
+   below; there is deliberately no @media rule forcing a column count
+   anywhere in this file.
+
+   Each bell sets its own width (--bell-w below, graded by pitch — see
+   src/scale.ts) rather than stretching to fill its column: the 1fr
+   maximum only bounds how wide a column may grow, not the bell's size.
+   --bell-height-cap is a ceiling driven by viewport height, not the
+   driver of bell size — it only shrinks a bell down (width and height
+   together, via the width: min() below) if the viewport is short.
+
+   --bell-height-cap's base value here is a pointer-agnostic fallback;
+   the two @media (pointer: …) blocks at the bottom of this file are what
+   actually set it, per DESIGN.md's "Small screens" section — coarse
+   pointers get no height cap (132px width floor instead, and the page is
+   allowed to scroll); fine pointers get a cap computed from the viewport
+   so the whole rack fits without scrolling (Part C's fit algorithm).
+
+   align-items: stretch (not start) makes every .bell-cell in a row the
+   same height — the row's own height, driven by its tallest cell — so
+   .bell-caption's margin-top: auto (below) can pin all twelve captions in a
+   row to one common baseline regardless of each bell's own graded
+   height. --row-gap and --caption-h are read by the same Part C formula
+   in the fine-pointer media block below, so they're declared once here
+   rather than duplicated as literals in two places. */
 .rack {
+  --row-gap: 2rem;
+  --caption-h: 3.25rem;
+  --bell-height-cap: 400px;
+  --rack-max-w: 1150px;
+  --col-gap: 1rem;
   display: grid;
-  grid-template-columns: repeat(5, minmax(44px, 1fr));
-  gap: 1rem;
-  touch-action: none;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  max-width: var(--rack-max-w);
+  justify-items: center;
+  align-items: stretch;
+  column-gap: var(--col-gap);
+  row-gap: var(--row-gap);
+  /* pan-y, not none: strikes fire on pointerdown alone (src/ui.ts), so
+     no touch gesture needs suppressing to register a strike — the mallet
+     drag-tracking in src/ui.ts already ignores pointerType !== "mouse".
+     touch-action: none was blocking the browser's native vertical-scroll
+     gesture for any swipe starting over the rack, which is most of a
+     phone's screen width; that only became visible once the rack grew
+     taller than the viewport, at six rows, and had nothing to do with
+     row count itself — see FACT-CHECK.md "Touch-action blocked scroll
+     on the coarse-pointer branch". */
+  touch-action: pan-y;
   user-select: none;
 }
 
-/* DESIGN.md: two columns and >=44px strike zones by 390px wide. Measured
-   failure at 495px with the old 480px cutoff (still five columns, ~26px
-   zones) — this checks the stylesheet text only; the rendering itself is
-   checked by hand at 390x844 and cannot be checked by any test here. */
-@media (max-width: 600px) {
-  .rack {
-    grid-template-columns: repeat(2, minmax(88px, 1fr));
-  }
+/* Bells 1-6 are the six lu (lower tier), 7-12 the six lü (upper tier) —
+   not an octave of 1-6, a separate whole-tone scale (see DESIGN.md). On
+   the real rack the low, large bells hang on the bottom tier and the
+   small high ones sit above, so the upper tier is placed here on the
+   visual top row and the lower tier below — inferred, not sourced, see
+   FACT-CHECK.md. Done with `order`, not grid-column/grid-row placement,
+   because the column count is no longer fixed at six: `order` re-paints
+   bells into "small first, large second" groups whatever the row width,
+   without touching DOM or tab order (both stay 1..12). At a single
+   column (see FACT-CHECK.md for the width this happens at) the two
+   groups just become two stacked runs, not two rows — the strict
+   two-tier grid no longer applies there.
+
+   --bell-w is each bell's own graded width, computed by hand from the
+   same zhenggu frequencies as src/scale.ts's bellSizes (bell 1 largest,
+   bell 12 smallest, interpolated by pitch) — this file and that module
+   are not wired together at build time, so if tuning.ts's frequencies
+   ever change, these numbers must be recomputed by hand to match.
+
+   Keyed by [data-bell], not :nth-child(N) — bug fix, an earlier revision.
+   :nth-child counts every sibling of .rack, not every bell, so it broke
+   (silently, for both --bell-w and order) the moment the mallet briefly
+   lived inside .rack as an unrelated sibling. data-bell is on the bell
+   itself and can't be desynced by an unrelated sibling. `order` no
+   longer lives here at all: src/ui.ts sets it per cell from
+   src/layout.ts's tierOrder(), a pure function keyed on the same
+   data-bell value, not on position. */
+.bell-cell[data-bell="1"] { --bell-w: 213px; }
+.bell-cell[data-bell="2"] { --bell-w: 201.73px; }
+.bell-cell[data-bell="3"] { --bell-w: 189.05px; }
+.bell-cell[data-bell="4"] { --bell-w: 174.79px; }
+.bell-cell[data-bell="5"] { --bell-w: 158.74px; }
+.bell-cell[data-bell="6"] { --bell-w: 140.69px; }
+.bell-cell[data-bell="7"] { --bell-w: 206.88px; }
+.bell-cell[data-bell="8"] { --bell-w: 194.85px; }
+.bell-cell[data-bell="9"] { --bell-w: 181.31px; }
+.bell-cell[data-bell="10"] { --bell-w: 167.92px; }
+.bell-cell[data-bell="11"] { --bell-w: 151.02px; }
+.bell-cell[data-bell="12"] { --bell-w: 132px; }
+
+/* .bell-cell is the actual grid item: one bell plus its caption strip,
+   stacked in a column so the caption sits below the bell rather than
+   overlapping it (Part B — no more text on the bell face). The bell is
+   top-aligned (the default for a flex column) and the caption is pinned
+   to the bottom of the cell via margin-top: auto on .bell-caption below
+   — combined with .rack's align-items: stretch, every cell in a row
+   shares the row's height, so every caption in that row lands on the
+   same y regardless of how tall its own bell is (Part D2). */
+.bell-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .bell {
   position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 44px;
-  aspect-ratio: 10 / 13;
+  width: min(var(--bell-w), calc(var(--bell-height-cap) / 1.6), var(--bell-col-max-w, 9999px));
+  aspect-ratio: 100 / 160;
+  transform-origin: 50% 0%;
   padding: 0;
   border: none;
   background: none;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  transition: opacity 600ms ease;
 }
 
-.bell:not(.bell--first) {
+/* Cold open: every cell but the first is removed from layout entirely
+   (not just hidden), so the grid — and so the frame above — has only
+   one cell's footprint to wrap before the first strike. On reveal it
+   returns to the grid and fades in in place; nothing moves in from
+   outside the frame. Moved from .bell to .bell-cell so the bell and its
+   caption hide and reveal together, as one unit. */
+.bell-cell:not(.bell-cell--first) {
+  display: none;
+}
+
+.rack.opened .bell-cell:not(.bell-cell--first) {
+  display: flex;
   opacity: 0;
-  pointer-events: none;
+  animation: bell-reveal 1200ms ease forwards;
 }
 
-.rack.opened .bell {
-  opacity: 1;
-  pointer-events: auto;
+@keyframes bell-reveal {
+  to {
+    opacity: 1;
+  }
 }
 
 .bell:focus-visible {
@@ -115,10 +304,22 @@ main {
   stroke-width: 1.5;
 }
 
+/* Metal finish (D2): fill is the #bell-gradient defined in index.html's
+   shared <defs> (userSpaceOnUse, y 0 to 160 in the symbol's own viewBox),
+   not a flat colour — lighter near the shoulder, darker toward the rim.
+   Stops are src/color.ts's BELL_GRADIENT_TOP/BELL_GRADIENT_BOTTOM; see
+   FACT-CHECK.md "Metal finish" for how they were chosen and the contrast
+   numbers checked against them. */
 .bell-outline {
-  fill: #8a6d3b;
+  fill: url(#bell-gradient);
   stroke: #3b2a17;
   stroke-width: 1.5;
+}
+
+.bell-wu {
+  fill: #7c5f34;
+  stroke: #3b2a17;
+  stroke-width: 1;
 }
 
 .bell-divider {
@@ -131,54 +332,315 @@ main {
   fill: #3b2a17;
 }
 
-.bell-label {
-  position: relative;
-  color: #fff8ea;
-  font-size: clamp(1rem, 4vw, 1.4rem);
+/* The bell face carries no type at all now (Part B) — bands, bosses and
+   the three strike marks only. The lu name and its romanisation moved
+   here, to a caption strip below the bell in its .bell-cell, the way a
+   museum caption sits under an object rather than painted on it. Fixed
+   height (--caption-h, declared once on .rack) and fixed font sizes —
+   deliberately NOT derived from --bell-w the way the old bell-face type
+   was, because each bell in a row is graded to a different width, and a
+   caption that scaled with its own bell would no longer share a common
+   height or baseline with its row-mates (Part D2). margin-top: auto
+   pushes the caption to the bottom of its (stretched) .bell-cell; see
+   .bell-cell and .rack's align-items: stretch above for the mechanism
+   that makes every cell in a row equally tall. */
+.bell-caption {
+  margin: auto 0 0;
+  height: var(--caption-h);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  color: var(--cream, #fff8ea);
+  text-align: center;
+  line-height: 1.2;
   pointer-events: none;
+}
+
+.bell-caption-zh {
+  font-size: 1.05rem;
+}
+
+.bell-caption-en {
+  font-size: 0.8rem;
 }
 
 /* Strike marks ------------------------------------------------------------- */
-/* Widened from 10% to 16% and given a dark ring on top of the cream fill,
-   set against the bronze body fill (#8a6d3b) and stroke (#3b2a17) — bigger
-   and higher-contrast than the 17x17px/no-border marks previously measured.
-   Whether that reads as "hit here" is Ava's to judge, not mine. */
+/* Sized as a % of the bell, not a fixed pixel value, and positioned from
+   src/layout.ts (via the --mark-* custom properties src/ui.ts writes —
+   this file holds no copy of those fractions): one centred (zhenggu), one
+   toward each lower corner (cegu, both corners sound the same tone in
+   this interface). Width is 0.16 of the bell — the drawn diameter, and
+   nothing else; the 44px accessibility floor is a property of the *hit
+   region* (bell width / 3, guaranteed by src/scale.ts's 132px minimum
+   bell width, 132/3=44), not of this drawn circle — sizing the mark
+   itself to 1/3 of the bell was last week's error, see src/layout.ts's
+   own comment for what it cost. aspect-ratio: 1 (not a computed height)
+   keeps each mark a true circle off the width alone. Fill/border are
+   their own warm tone (src/color.ts MARK_FILL/MARK_EDGE), distinct from
+   the cream caption colour — a measured defect (FACT-CHECK.md) found
+   both the same colour, reading as a smudge where their boxes
+   overlapped. Permanent: no class or state here ever sets their opacity
+   to 0 or otherwise hides them once their bell is in the DOM (bell 1,
+   always; the other nine, once revealed — see .bell-cell:not(.bell-
+   cell--first) above, which hides the whole cell, not the marks
+   specifically). */
 .mark {
   position: absolute;
-  width: 16%;
+  width: var(--mark-w, 16%);
   aspect-ratio: 1;
   border-radius: 50%;
-  background: #fff8ea;
-  border: 2px solid #3b2a17;
+  background: var(--mark-fill, #e3c07a);
+  border: 2px solid var(--mark-edge, #7a5a26);
   box-sizing: border-box;
-  opacity: 0;
+  opacity: 0.9;
   pointer-events: none;
-  transition: opacity 1s ease-out;
 }
 
 .mark-centre {
-  top: 50%;
+  top: var(--mark-centre-y, 70%);
   left: 50%;
   transform: translate(-50%, -50%);
 }
 
-.mark-corner {
-  top: 12%;
-  left: 12%;
+.mark-corner-left {
+  top: var(--mark-corner-y, 75%);
+  left: var(--mark-corner-x, 22%);
   transform: translate(-50%, -50%);
 }
 
-.rack.marks-shown .mark {
-  opacity: 0.9;
-  transition: none;
+.mark-corner-right {
+  top: var(--mark-corner-y, 75%);
+  left: calc(100% - var(--mark-corner-x, 22%));
+  transform: translate(-50%, -50%);
+}
+
+/* Strike feedback ----------------------------------------------------------- */
+/* On the struck bell only: a swing that settles back, and a ripple that
+   expands from the exact point struck (--strike-x/--strike-y, set by
+   src/ui.ts from the same strike position strike.ts's mix() uses). Both
+   animations are under 600ms. These are ear-and-eye values, to be tuned
+   later — not evaluated here, see CLAUDE.md. */
+.bell--struck {
+  animation: bell-swing 450ms ease-out;
+}
+
+.bell--struck::after {
+  content: "";
+  position: absolute;
+  left: var(--strike-x, 50%);
+  top: var(--strike-y, 80%);
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: #fff8ea;
+  transform: translate(-50%, -50%);
+  opacity: 0.6;
+  pointer-events: none;
+  animation: bell-ripple 500ms ease-out;
+}
+
+@keyframes bell-swing {
+  0% {
+    transform: rotate(0deg);
+  }
+  30% {
+    transform: rotate(5deg);
+  }
+  60% {
+    transform: rotate(-3deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes bell-ripple {
+  from {
+    width: 0;
+    height: 0;
+    opacity: 0.6;
+  }
+  to {
+    width: 70%;
+    height: 70%;
+    opacity: 0;
+  }
+}
+
+@keyframes bell-flash {
+  0% {
+    filter: brightness(1);
+  }
+  40% {
+    filter: brightness(1.6);
+  }
+  100% {
+    filter: brightness(1);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .bell {
-    transition: none;
+  .rack.opened .bell:not(.bell--first) {
+    animation: none;
+    opacity: 1;
   }
 
-  .mark {
-    transition: none;
+  .bell--struck {
+    animation: bell-flash 300ms ease-out;
+  }
+
+  .bell--struck::after {
+    content: none;
+  }
+}
+
+/* Mallet (D1) --------------------------------------------------------------- */
+/* Follows the pointer over the rack and swings on strike, at the exact
+   point struck. src/ui.ts only ever adds .mallet--visible/.mallet--swing
+   for pointerType "mouse" — touch fires PointerEvents too, so it's
+   filtered explicitly; keyboard never fires pointer events at all, so it
+   is excluded with no extra code. --mallet-x/--mallet-y are set by
+   src/ui.ts from the pointer's position within .rack (rack.getBoundingClientRect(),
+   unchanged by where .mallet itself lives in the DOM).
+
+   .mallet is a child of .rack-frame, not .rack (bug fix, this revision —
+   see FACT-CHECK.md "Rack tier order"), so its containing block for
+   position: absolute is .rack-frame's padding edge, not .rack's own
+   top-left. left/top below add .rack-frame's own padding
+   (--frame-pad-x/-y, declared once on .rack-frame) to land back on
+   .rack's actual top-left — the same point src/ui.ts's offsets are
+   measured from — without a second copy of those two numbers.
+
+   Dimensions, duration and swing angle below are guesses, not
+   measurements — not evaluated here, see CLAUDE.md. */
+.mallet {
+  position: absolute;
+  left: var(--frame-pad-x, 0px);
+  top: var(--frame-pad-y, 0px);
+  width: 18px;
+  height: 46px;
+  transform: translate(calc(var(--mallet-x, 0px) - 50%), calc(var(--mallet-y, 0px) - 100%));
+  transform-origin: 50% 100%;
+  background: linear-gradient(180deg, #8b6038 0%, #8b6038 70%, #3b2a17 70%, #3b2a17 100%);
+  border-radius: 4px 4px 2px 2px;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.mallet--visible {
+  opacity: 1;
+}
+
+.mallet--swing {
+  animation: mallet-swing 220ms ease-out;
+}
+
+@keyframes mallet-swing {
+  0% {
+    transform: translate(calc(var(--mallet-x, 0px) - 50%), calc(var(--mallet-y, 0px) - 100%)) rotate(0deg);
+  }
+  40% {
+    transform: translate(calc(var(--mallet-x, 0px) - 50%), calc(var(--mallet-y, 0px) - 100%)) rotate(18deg);
+  }
+  100% {
+    transform: translate(calc(var(--mallet-x, 0px) - 50%), calc(var(--mallet-y, 0px) - 100%)) rotate(0deg);
+  }
+}
+
+/* Suppress entirely under reduced motion (D1) — the simplest reading of
+   "suppress", not measured or asked for beyond that word; flagged as a
+   judgment call in the session's report. */
+@media (prefers-reduced-motion: reduce) {
+  .mallet {
+    display: none;
+  }
+}
+
+/* Fit, by pointer type (Part A / Part C) ------------------------------------ */
+/* The 132px width floor and the viewport-fit height cap are two different
+   rules for two different input devices, not one rule keyed to viewport
+   width. Ava's decision, verbatim reasoning in DESIGN.md's Opening/mobile
+   note: a phone's scarce resource is aimable target width, and three 44px
+   zones need 132px — graded sizes would push the smallest bells below
+   that floor. A touchscreen is what makes target width scarce, not a
+   narrow viewport (a small laptop window has the same width as a phone
+   but a mouse, which doesn't need 132px); pointer: coarse/fine key off
+   the input device directly, which viewport width can only approximate.
+
+   Selector specificity here (.rack .bell-cell) matches the [data-bell]
+   rules above (one class + one attribute selector, same weight either
+   way) and comes later in the file, so it wins while the relevant query
+   is active. */
+@media (pointer: coarse) {
+  .rack {
+    grid-template-columns: repeat(2, 1fr);
+    /* No height cap on a touch device: let the page scroll instead of
+       shrinking bells below the 132px target-width floor. */
+    --bell-height-cap: 999px;
+  }
+
+  .rack .bell-cell {
+    --bell-w: 132px;
+  }
+}
+
+/* A mouse/trackpad needs no width floor — the 132px rule above is about
+   aimable target size, which doesn't apply to a pointer — so instead the
+   whole rack is capped to fit the viewport without scrolling (Part C).
+   Height and width both bind; whichever is scarcer wins:
+     available rack height = 0.72 * viewport height   (roughly what's left
+       after the header, frame padding and footer, so the whole page fits)
+     row height            = (available - row gap) / 2
+     bell height           = row height - caption strip height
+     bell width            = bell height / 1.6
+   --bell-height-cap here computes bell height directly; .bell's own
+   `width: min(var(--bell-w), calc(var(--bell-height-cap) / 1.6),
+   var(--bell-col-max-w, 9999px))` divides by 1.6 to get the height-derived
+   width, and separately takes the smaller of that, each bell's own graded
+   --bell-w, and --bell-col-max-w below.
+
+   Six columns (Part B): the base rule's minmax(190px, 1fr) floor was
+   sized for five columns and would auto-fit down to fewer than six once
+   a sixth column needed to fit within max-width: var(--rack-max-w).
+   --bell-col-max-w lowers that floor to exactly one sixth of the rack's
+   own width (minus the five gaps between six columns), still expressed
+   as minmax() inside repeat(auto-fit, …) rather than a literal column
+   count, so auto-fit resolves to six columns by arithmetic, not by a
+   forced integer.
+
+   Bug fixed this revision: the floor above used to be one sixth of
+   var(--rack-max-w) (a fixed 1150px), not one sixth of .rack's own
+   rendered width. Below --rack-max-w's own value (the common case on any
+   desktop window narrower than roughly 1150px plus the frame's and
+   body's padding) that fixed floor was too wide for six tracks to fit,
+   so auto-fit dropped to fewer, wider columns instead — the mismatch
+   Ava reported ("一排放6个，一共放两排" no longer held).
+
+   --bell-col-track-floor is a second, separate variable for this, not a
+   rewrite of --bell-col-max-w in place — the two are read in containing
+   blocks with opposite properties. Inside grid-template-columns, a %
+   resolves against .rack's own content-box width, which is definite
+   (bounded by max-width: var(--rack-max-w)), so 100% here safely tracks
+   the rack's actual current width instead of the fixed constant. But
+   --bell-col-max-w is also read a second place, .bell's own `width:
+   min(..., var(--bell-col-max-w, 9999px))` above — and .bell's
+   containing block there is .bell-cell, which .rack's justify-items:
+   center leaves un-stretched, so .bell-cell's width is shrink-to-fit
+   from .bell's own rendered width. A % there has no definite base to
+   resolve against — it's circular — and the first version of this fix
+   reused one variable for both places, which measured as a 0-width
+   .bell in a headless check. --bell-col-max-w keeps its original
+   absolute-length formula (still derived from --rack-max-w, a plain
+   length, safe in any containing block) so that use is untouched;
+   --bell-col-track-floor is new and is read only where % is safe. */
+@media (pointer: fine) {
+  .rack {
+    --bell-height-cap: calc((72vh - var(--row-gap)) / 2 - var(--caption-h));
+    --bell-col-max-w: calc((var(--rack-max-w) - 5 * var(--col-gap)) / 6);
+    --bell-col-track-floor: calc((100% - 5 * var(--col-gap)) / 6);
+    grid-template-columns: repeat(auto-fit, minmax(var(--bell-col-track-floor), 1fr));
   }
 }

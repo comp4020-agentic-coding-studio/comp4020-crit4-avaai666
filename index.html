@@ -6,7 +6,7 @@
     <title>Bianzhong</title>
     <meta
       name="description"
-      content="A playable bianzhong: ten bronze chime bells in the browser, each struck at two points for two different pitches."
+      content="A playable bianzhong: twelve bronze chime bells in the browser, each struck at two points for two different pitches."
     />
 
     <!--
@@ -28,185 +28,359 @@
       <h1 class="sr-only">Bianzhong</h1>
 
       <!-- Shared bell silhouette, referenced by every button below so the
-           markup isn't repeated ten times. Front elevation: shank at top,
-           body widening downward, concave bottom rim, bosses inside the
-           outline in four panels either side of the dividers. Decorative
-           and inferred — see FACT-CHECK.md. -->
+           markup isn't repeated twelve times. Front elevation, anatomy and
+           proportions read off photographs of five real bells — see
+           FACT-CHECK.md for the source and what's still inferred:
+             shank (yong) at top; flat top plate (wu) with a decorated
+             band; nearly rectangular body (~1.05 flare, ~1.5x width in
+             height); a central vertical panel (zheng) dividing the upper
+             body, with a block of nine bosses (mei), 3x3, either side;
+             a smooth lower body (gu) below the boss line, where the
+             strike marks belong; a deep, upward-concave bottom rim (yu
+             kou) with its two corners (xian) as the lowest part of the
+             bell. -->
       <svg width="0" height="0" style="position: absolute" aria-hidden="true">
         <defs>
-          <symbol id="bell-shape" viewBox="0 0 100 130">
-            <rect class="bell-shank" x="44" y="0" width="12" height="18" />
-            <path class="bell-outline" d="M32 16 L68 16 L90 92 Q50 76 10 92 Z" />
-            <line class="bell-divider" x1="50" y1="16" x2="50" y2="82" />
-            <line class="bell-divider" x1="22" y1="53" x2="78" y2="53" />
+          <!-- Metal finish (D2): lighter near the shoulder, darker toward
+               the rim. userSpaceOnUse with explicit y1/y2 in the symbol's
+               own 100x160 viewBox, not objectBoundingBox, so a y-fraction
+               here means the same thing it means in src/layout.ts (0 at
+               the very top of the viewBox, 1 at y=160) — see
+               FACT-CHECK.md "Metal finish" for the contrast numbers that
+               depend on that. Stops mirror src/color.ts's
+               BELL_GRADIENT_TOP/BELL_GRADIENT_BOTTOM by hand, the same way
+               styles.css's --bell-w already mirrors src/scale.ts. -->
+          <linearGradient id="bell-gradient" x1="0" y1="0" x2="0" y2="160" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stop-color="#b27337" />
+            <stop offset="1" stop-color="#382411" />
+          </linearGradient>
+          <symbol id="bell-shape" viewBox="0 0 100 160">
+            <rect class="bell-shank" x="44" y="0" width="12" height="40" />
+            <path class="bell-outline" d="M12 40 L88 40 L90 160 Q50 100 10 160 Z" />
+            <rect class="bell-wu" x="12" y="40" width="76" height="10" />
+            <line class="bell-divider" x1="50" y1="50" x2="50" y2="95" />
+            <line class="bell-divider" x1="11" y1="95" x2="89" y2="95" />
             <g class="bell-nubs">
-              <circle cx="30" cy="28" r="2.2" /> <circle cx="38" cy="28" r="2.2" /> <circle cx="46" cy="28" r="2.2" />
-              <circle cx="30" cy="36" r="2.2" /> <circle cx="38" cy="36" r="2.2" /> <circle cx="46" cy="36" r="2.2" />
-              <circle cx="54" cy="28" r="2.2" /> <circle cx="62" cy="28" r="2.2" /> <circle cx="70" cy="28" r="2.2" />
-              <circle cx="54" cy="36" r="2.2" /> <circle cx="62" cy="36" r="2.2" /> <circle cx="70" cy="36" r="2.2" />
-              <circle cx="25" cy="62" r="2.2" /> <circle cx="35" cy="62" r="2.2" /> <circle cx="45" cy="62" r="2.2" />
-              <circle cx="25" cy="70" r="2.2" /> <circle cx="35" cy="70" r="2.2" /> <circle cx="45" cy="70" r="2.2" />
-              <circle cx="55" cy="62" r="2.2" /> <circle cx="65" cy="62" r="2.2" /> <circle cx="75" cy="62" r="2.2" />
-              <circle cx="55" cy="70" r="2.2" /> <circle cx="65" cy="70" r="2.2" /> <circle cx="75" cy="70" r="2.2" />
+              <circle cx="22" cy="60" r="2.2" /> <circle cx="31" cy="60" r="2.2" /> <circle cx="40" cy="60" r="2.2" />
+              <circle cx="22" cy="72" r="2.2" /> <circle cx="31" cy="72" r="2.2" /> <circle cx="40" cy="72" r="2.2" />
+              <circle cx="22" cy="84" r="2.2" /> <circle cx="31" cy="84" r="2.2" /> <circle cx="40" cy="84" r="2.2" />
+              <circle cx="60" cy="60" r="2.2" /> <circle cx="69" cy="60" r="2.2" /> <circle cx="78" cy="60" r="2.2" />
+              <circle cx="60" cy="72" r="2.2" /> <circle cx="69" cy="72" r="2.2" /> <circle cx="78" cy="72" r="2.2" />
+              <circle cx="60" cy="84" r="2.2" /> <circle cx="69" cy="84" r="2.2" /> <circle cx="78" cy="84" r="2.2" />
             </g>
           </symbol>
         </defs>
       </svg>
 
       <div class="rack-frame">
+      <!-- Mallet (D1): follows the pointer over the rack, swings on
+           strike. Mouse only — src/ui.ts never adds .mallet--visible for
+           touch or keyboard input, so this stays invisible for both with
+           no separate markup. aria-hidden: it carries no information not
+           already on the bell it's over. A sibling of .rack, not a child
+           of it — .rack must contain bell cells and nothing else, or
+           positional CSS selectors keyed to bell count (see styles.css
+           .bell-cell[data-bell]) silently shift by one. -->
+      <div class="mallet" id="mallet" aria-hidden="true"></div>
       <div class="rack" id="rack">
-        <button
-          type="button"
-          class="bell bell--first"
-          data-bell="1"
-          data-key-zhenggu="KeyA"
-          data-key-cegu="KeyQ"
-        >
-          <svg class="bell-svg" viewBox="0 0 100 130" aria-hidden="true" focusable="false">
-            <use href="#bell-shape"></use>
-          </svg>
-          <span class="mark mark-centre" aria-hidden="true"></span>
-          <span class="mark mark-corner" aria-hidden="true"></span>
-          <span class="bell-label" lang="zh">黄钟</span>
-        </button>
-        <button
-          type="button"
-          class="bell"
-          inert
-          data-bell="2"
-          data-key-zhenggu="KeyS"
-          data-key-cegu="KeyW"
-        >
-          <svg class="bell-svg" viewBox="0 0 100 130" aria-hidden="true" focusable="false">
-            <use href="#bell-shape"></use>
-          </svg>
-          <span class="mark mark-centre" aria-hidden="true"></span>
-          <span class="mark mark-corner" aria-hidden="true"></span>
-          <span class="bell-label" lang="zh">太簇</span>
-        </button>
-        <button
-          type="button"
-          class="bell"
-          inert
-          data-bell="3"
-          data-key-zhenggu="KeyD"
-          data-key-cegu="KeyE"
-        >
-          <svg class="bell-svg" viewBox="0 0 100 130" aria-hidden="true" focusable="false">
-            <use href="#bell-shape"></use>
-          </svg>
-          <span class="mark mark-centre" aria-hidden="true"></span>
-          <span class="mark mark-corner" aria-hidden="true"></span>
-          <span class="bell-label" lang="zh">姑洗</span>
-        </button>
-        <button
-          type="button"
-          class="bell"
-          inert
-          data-bell="4"
-          data-key-zhenggu="KeyF"
-          data-key-cegu="KeyR"
-        >
-          <svg class="bell-svg" viewBox="0 0 100 130" aria-hidden="true" focusable="false">
-            <use href="#bell-shape"></use>
-          </svg>
-          <span class="mark mark-centre" aria-hidden="true"></span>
-          <span class="mark mark-corner" aria-hidden="true"></span>
-          <span class="bell-label" lang="zh">林钟</span>
-        </button>
-        <button
-          type="button"
-          class="bell"
-          inert
-          data-bell="5"
-          data-key-zhenggu="KeyG"
-          data-key-cegu="KeyT"
-        >
-          <svg class="bell-svg" viewBox="0 0 100 130" aria-hidden="true" focusable="false">
-            <use href="#bell-shape"></use>
-          </svg>
-          <span class="mark mark-centre" aria-hidden="true"></span>
-          <span class="mark mark-corner" aria-hidden="true"></span>
-          <span class="bell-label" lang="zh">南吕</span>
-        </button>
-        <button
-          type="button"
-          class="bell"
-          inert
-          data-bell="6"
-          data-key-zhenggu="KeyH"
-          data-key-cegu="KeyY"
-        >
-          <svg class="bell-svg" viewBox="0 0 100 130" aria-hidden="true" focusable="false">
-            <use href="#bell-shape"></use>
-          </svg>
-          <span class="mark mark-centre" aria-hidden="true"></span>
-          <span class="mark mark-corner" aria-hidden="true"></span>
-          <span class="bell-label" lang="zh">黄钟</span>
-        </button>
-        <button
-          type="button"
-          class="bell"
-          inert
-          data-bell="7"
-          data-key-zhenggu="KeyJ"
-          data-key-cegu="KeyU"
-        >
-          <svg class="bell-svg" viewBox="0 0 100 130" aria-hidden="true" focusable="false">
-            <use href="#bell-shape"></use>
-          </svg>
-          <span class="mark mark-centre" aria-hidden="true"></span>
-          <span class="mark mark-corner" aria-hidden="true"></span>
-          <span class="bell-label" lang="zh">太簇</span>
-        </button>
-        <button
-          type="button"
-          class="bell"
-          inert
-          data-bell="8"
-          data-key-zhenggu="KeyK"
-          data-key-cegu="KeyI"
-        >
-          <svg class="bell-svg" viewBox="0 0 100 130" aria-hidden="true" focusable="false">
-            <use href="#bell-shape"></use>
-          </svg>
-          <span class="mark mark-centre" aria-hidden="true"></span>
-          <span class="mark mark-corner" aria-hidden="true"></span>
-          <span class="bell-label" lang="zh">姑洗</span>
-        </button>
-        <button
-          type="button"
-          class="bell"
-          inert
-          data-bell="9"
-          data-key-zhenggu="KeyL"
-          data-key-cegu="KeyO"
-        >
-          <svg class="bell-svg" viewBox="0 0 100 130" aria-hidden="true" focusable="false">
-            <use href="#bell-shape"></use>
-          </svg>
-          <span class="mark mark-centre" aria-hidden="true"></span>
-          <span class="mark mark-corner" aria-hidden="true"></span>
-          <span class="bell-label" lang="zh">林钟</span>
-        </button>
-        <button
-          type="button"
-          class="bell"
-          inert
-          data-bell="10"
-          data-key-zhenggu="Semicolon"
-          data-key-cegu="KeyP"
-        >
-          <svg class="bell-svg" viewBox="0 0 100 130" aria-hidden="true" focusable="false">
-            <use href="#bell-shape"></use>
-          </svg>
-          <span class="mark mark-centre" aria-hidden="true"></span>
-          <span class="mark mark-corner" aria-hidden="true"></span>
-          <span class="bell-label" lang="zh">南吕</span>
-        </button>
+        <div class="bell-cell bell-cell--first" data-bell="1">
+          <button
+            type="button"
+            class="bell bell--first"
+            data-bell="1"
+            aria-label="huangzhong bell, lower tier"
+            aria-keyshortcuts="A"
+            data-key-zhenggu="KeyA"
+            data-key-cegu="KeyZ"
+          >
+            <svg class="bell-svg" viewBox="0 0 100 160" aria-hidden="true" focusable="false">
+              <use href="#bell-shape"></use>
+            </svg>
+            <span class="mark mark-centre" aria-hidden="true"></span>
+            <span class="mark mark-corner-left" aria-hidden="true"></span>
+            <span class="mark mark-corner-right" aria-hidden="true"></span>
+          </button>
+          <p class="bell-caption">
+            <span class="bell-caption-zh" lang="zh">黄钟</span>
+            <span class="bell-caption-en">huangzhong</span>
+          </p>
+        </div>
+        <div class="bell-cell" data-bell="2">
+          <button
+            type="button"
+            class="bell"
+            inert
+            data-bell="2"
+            aria-label="taicu bell, lower tier"
+            aria-keyshortcuts="S"
+            data-key-zhenggu="KeyS"
+            data-key-cegu="KeyX"
+          >
+            <svg class="bell-svg" viewBox="0 0 100 160" aria-hidden="true" focusable="false">
+              <use href="#bell-shape"></use>
+            </svg>
+            <span class="mark mark-centre" aria-hidden="true"></span>
+            <span class="mark mark-corner-left" aria-hidden="true"></span>
+            <span class="mark mark-corner-right" aria-hidden="true"></span>
+          </button>
+          <p class="bell-caption">
+            <span class="bell-caption-zh" lang="zh">太簇</span>
+            <span class="bell-caption-en">taicu</span>
+          </p>
+        </div>
+        <div class="bell-cell" data-bell="3">
+          <button
+            type="button"
+            class="bell"
+            inert
+            data-bell="3"
+            aria-label="guxian bell, lower tier"
+            aria-keyshortcuts="D"
+            data-key-zhenggu="KeyD"
+            data-key-cegu="KeyC"
+          >
+            <svg class="bell-svg" viewBox="0 0 100 160" aria-hidden="true" focusable="false">
+              <use href="#bell-shape"></use>
+            </svg>
+            <span class="mark mark-centre" aria-hidden="true"></span>
+            <span class="mark mark-corner-left" aria-hidden="true"></span>
+            <span class="mark mark-corner-right" aria-hidden="true"></span>
+          </button>
+          <p class="bell-caption">
+            <span class="bell-caption-zh" lang="zh">姑洗</span>
+            <span class="bell-caption-en">guxian</span>
+          </p>
+        </div>
+        <div class="bell-cell" data-bell="4">
+          <button
+            type="button"
+            class="bell"
+            inert
+            data-bell="4"
+            aria-label="ruibin bell, lower tier"
+            aria-keyshortcuts="F"
+            data-key-zhenggu="KeyF"
+            data-key-cegu="KeyV"
+          >
+            <svg class="bell-svg" viewBox="0 0 100 160" aria-hidden="true" focusable="false">
+              <use href="#bell-shape"></use>
+            </svg>
+            <span class="mark mark-centre" aria-hidden="true"></span>
+            <span class="mark mark-corner-left" aria-hidden="true"></span>
+            <span class="mark mark-corner-right" aria-hidden="true"></span>
+          </button>
+          <p class="bell-caption">
+            <span class="bell-caption-zh" lang="zh">蕤宾</span>
+            <span class="bell-caption-en">ruibin</span>
+          </p>
+        </div>
+        <div class="bell-cell" data-bell="5">
+          <button
+            type="button"
+            class="bell"
+            inert
+            data-bell="5"
+            aria-label="yize bell, lower tier"
+            aria-keyshortcuts="G"
+            data-key-zhenggu="KeyG"
+            data-key-cegu="KeyB"
+          >
+            <svg class="bell-svg" viewBox="0 0 100 160" aria-hidden="true" focusable="false">
+              <use href="#bell-shape"></use>
+            </svg>
+            <span class="mark mark-centre" aria-hidden="true"></span>
+            <span class="mark mark-corner-left" aria-hidden="true"></span>
+            <span class="mark mark-corner-right" aria-hidden="true"></span>
+          </button>
+          <p class="bell-caption">
+            <span class="bell-caption-zh" lang="zh">夷则</span>
+            <span class="bell-caption-en">yize</span>
+          </p>
+        </div>
+        <div class="bell-cell" data-bell="6">
+          <button
+            type="button"
+            class="bell"
+            inert
+            data-bell="6"
+            aria-label="wuyi bell, lower tier"
+            aria-keyshortcuts="H"
+            data-key-zhenggu="KeyH"
+            data-key-cegu="KeyN"
+          >
+            <svg class="bell-svg" viewBox="0 0 100 160" aria-hidden="true" focusable="false">
+              <use href="#bell-shape"></use>
+            </svg>
+            <span class="mark mark-centre" aria-hidden="true"></span>
+            <span class="mark mark-corner-left" aria-hidden="true"></span>
+            <span class="mark mark-corner-right" aria-hidden="true"></span>
+          </button>
+          <p class="bell-caption">
+            <span class="bell-caption-zh" lang="zh">无射</span>
+            <span class="bell-caption-en">wuyi</span>
+          </p>
+        </div>
+        <div class="bell-cell" data-bell="7">
+          <button
+            type="button"
+            class="bell"
+            inert
+            data-bell="7"
+            aria-label="dalu bell, upper tier"
+            aria-keyshortcuts="W"
+            data-key-zhenggu="KeyW"
+            data-key-cegu="Digit2"
+          >
+            <svg class="bell-svg" viewBox="0 0 100 160" aria-hidden="true" focusable="false">
+              <use href="#bell-shape"></use>
+            </svg>
+            <span class="mark mark-centre" aria-hidden="true"></span>
+            <span class="mark mark-corner-left" aria-hidden="true"></span>
+            <span class="mark mark-corner-right" aria-hidden="true"></span>
+          </button>
+          <p class="bell-caption">
+            <span class="bell-caption-zh" lang="zh">大吕</span>
+            <span class="bell-caption-en">dalu</span>
+          </p>
+        </div>
+        <div class="bell-cell" data-bell="8">
+          <button
+            type="button"
+            class="bell"
+            inert
+            data-bell="8"
+            aria-label="jiazhong bell, upper tier"
+            aria-keyshortcuts="E"
+            data-key-zhenggu="KeyE"
+            data-key-cegu="Digit3"
+          >
+            <svg class="bell-svg" viewBox="0 0 100 160" aria-hidden="true" focusable="false">
+              <use href="#bell-shape"></use>
+            </svg>
+            <span class="mark mark-centre" aria-hidden="true"></span>
+            <span class="mark mark-corner-left" aria-hidden="true"></span>
+            <span class="mark mark-corner-right" aria-hidden="true"></span>
+          </button>
+          <p class="bell-caption">
+            <span class="bell-caption-zh" lang="zh">夹钟</span>
+            <span class="bell-caption-en">jiazhong</span>
+          </p>
+        </div>
+        <div class="bell-cell" data-bell="9">
+          <button
+            type="button"
+            class="bell"
+            inert
+            data-bell="9"
+            aria-label="zhonglu bell, upper tier"
+            aria-keyshortcuts="R"
+            data-key-zhenggu="KeyR"
+            data-key-cegu="Digit4"
+          >
+            <svg class="bell-svg" viewBox="0 0 100 160" aria-hidden="true" focusable="false">
+              <use href="#bell-shape"></use>
+            </svg>
+            <span class="mark mark-centre" aria-hidden="true"></span>
+            <span class="mark mark-corner-left" aria-hidden="true"></span>
+            <span class="mark mark-corner-right" aria-hidden="true"></span>
+          </button>
+          <p class="bell-caption">
+            <span class="bell-caption-zh" lang="zh">仲吕</span>
+            <span class="bell-caption-en">zhonglu</span>
+          </p>
+        </div>
+        <div class="bell-cell" data-bell="10">
+          <button
+            type="button"
+            class="bell"
+            inert
+            data-bell="10"
+            aria-label="linzhong bell, upper tier"
+            aria-keyshortcuts="T"
+            data-key-zhenggu="KeyT"
+            data-key-cegu="Digit5"
+          >
+            <svg class="bell-svg" viewBox="0 0 100 160" aria-hidden="true" focusable="false">
+              <use href="#bell-shape"></use>
+            </svg>
+            <span class="mark mark-centre" aria-hidden="true"></span>
+            <span class="mark mark-corner-left" aria-hidden="true"></span>
+            <span class="mark mark-corner-right" aria-hidden="true"></span>
+          </button>
+          <p class="bell-caption">
+            <span class="bell-caption-zh" lang="zh">林钟</span>
+            <span class="bell-caption-en">linzhong</span>
+          </p>
+        </div>
+        <div class="bell-cell" data-bell="11">
+          <button
+            type="button"
+            class="bell"
+            inert
+            data-bell="11"
+            aria-label="nanlu bell, upper tier"
+            aria-keyshortcuts="Y"
+            data-key-zhenggu="KeyY"
+            data-key-cegu="Digit6"
+          >
+            <svg class="bell-svg" viewBox="0 0 100 160" aria-hidden="true" focusable="false">
+              <use href="#bell-shape"></use>
+            </svg>
+            <span class="mark mark-centre" aria-hidden="true"></span>
+            <span class="mark mark-corner-left" aria-hidden="true"></span>
+            <span class="mark mark-corner-right" aria-hidden="true"></span>
+          </button>
+          <p class="bell-caption">
+            <span class="bell-caption-zh" lang="zh">南吕</span>
+            <span class="bell-caption-en">nanlu</span>
+          </p>
+        </div>
+        <div class="bell-cell" data-bell="12">
+          <button
+            type="button"
+            class="bell"
+            inert
+            data-bell="12"
+            aria-label="yingzhong bell, upper tier"
+            aria-keyshortcuts="U"
+            data-key-zhenggu="KeyU"
+            data-key-cegu="Digit7"
+          >
+            <svg class="bell-svg" viewBox="0 0 100 160" aria-hidden="true" focusable="false">
+              <use href="#bell-shape"></use>
+            </svg>
+            <span class="mark mark-centre" aria-hidden="true"></span>
+            <span class="mark mark-corner-left" aria-hidden="true"></span>
+            <span class="mark mark-corner-right" aria-hidden="true"></span>
+          </button>
+          <p class="bell-caption">
+            <span class="bell-caption-zh" lang="zh">应钟</span>
+            <span class="bell-caption-en">yingzhong</span>
+          </p>
+        </div>
       </div>
       </div>
     </main>
+    <footer>
+      <p>Twelve of the sixty-five bells of Marquis Yi of Zeng, 433 BCE.</p>
+      <!-- The tune (B4): plays src/melody.ts's MOLIHUA_OPENING through the
+           exact same strike() path a real bell click uses — see src/ui.ts.
+           Two-state button: its own visible text is its accessible name,
+           updated on state change, so no separate aria-label is needed.
+           data-label-idle/-playing are placeholders — see the session's
+           report for the exact strings needed. -->
+      <p>
+        <button
+          type="button"
+          id="play-tune"
+          data-label-idle="Play the opening"
+          data-label-playing="Playing…"
+        >
+          Play the opening
+        </button>
+      </p>
+      <p><a href="./about.html">About the bells</a></p>
+    </footer>
     <script type="module" src="./src/ui.ts"></script>
   </body>
 </html>
