@@ -1,7 +1,7 @@
 # What this is
 
 A playable bianzhong — a Chinese bronze chime-bell rack — in the browser.
-Ten bells. Each bell sounds two different pitches depending on where you
+Twelve bells. Each bell sounds two different pitches depending on where you
 hit it.
 
 # The mechanic
@@ -49,11 +49,9 @@ decimals in the source.
     wuyi       无射   59049/32768
     yingzhong  应钟   243/128
 
-This instrument uses 7 of the 12: the five zhenggu pentatonic pitches
-(huangzhong, taicu, guxian, linzhong, nanlü) and two more on the cegu
-corners (ruibin, yingzhong). Dalü, jiazhong, zhonglü, yize and wuyi are in
-the table — the chain wouldn't be the chain without them — but no bell
-sounds them. spec/crit-4.test.ts asserts this on the record.
+This instrument uses all 12: every one of the twelve lü sounds as some
+bell's zhenggu, exactly once. spec/crit-4.test.ts asserts this on the
+record.
 
 The chain of fifths does not close. spec/crit-4.test.ts asserts by how
 much.
@@ -63,46 +61,93 @@ Pythagorean thirds, used for the cegu interval:
     major third = 81/64
     minor third = 32/27
 
-The ten bells. Bells 6-10 are bells 1-5 an octave up (ratio x 2).
+The twelve lü divide into two sets of six by the exponent, in the
+fifth-chain, that generates them (huangzhong = 3^0, dalü = 3^1, taicu =
+3^2, ... yingzhong = 3^11, each reduced into one octave): the six lu
+(六律, yang, even powers of 3 — huangzhong, taicu, guxian, ruibin, yize,
+wuyi) and the six lü (六呂, yin, odd powers of 3 — dalü, jiazhong,
+zhonglü, linzhong, nanlü, yingzhong). This six-lu/six-lü division is
+standard terminology; FACT-CHECK.md flags it as needing a source, not yet
+supplied. The even/odd-power-of-three property itself is arithmetic,
+checked directly against the fractions below — not a claim that needed a
+source.
 
-    #   zhenggu           ratio      cegu              ratio       interval
-    1   huangzhong 黄钟   1/1        guxian 姑洗       81/64       major
-    2   taicu 太簇        9/8        ruibin 蕤宾       729/512     major
-    3   guxian 姑洗       81/64      linzhong 林钟     3/2         minor
-    4   linzhong 林钟     3/2        yingzhong 应钟    243/128     major
-    5   nanlü 南吕        27/16      huangzhong 黄钟   2/1         minor
-    6   huangzhong 黄钟   2/1        guxian 姑洗       81/32       major
-    7   taicu 太簇        9/4        ruibin 蕤宾       729/256     major
-    8   guxian 姑洗       81/32      linzhong 林钟     3/1         minor
-    9   linzhong 林钟     3/1        yingzhong 应钟    243/64      major
-    10  nanlü 南吕        27/8       huangzhong 黄钟   4/1         minor
+Consecutive members of either set are 9/8 apart (a whole tone) with one
+exception: going up the upper tier, zhonglü to linzhong is 65536/59049
+(≈180.5 cents), not 9/8 (≈203.9 cents) — the fifth-chain doesn't close
+(see above), and this is where that shows up inside a single tier rather
+than only at the join between bell 12 and bell 1. Every other of the ten
+within-tier steps is exactly 9/8. spec/crit-4.test.ts's Check 4 pins both
+the nine whole tones and this one documented exception to their exact
+fractions, rather than asserting a uniform rule that the numbers don't
+support. With that one exception, each tier reads as a six-note
+whole-tone scale: the lower tier's zhenggu are the six lu in ascending
+order, the upper tier's are the six lü in ascending order. The two tiers
+are not one scale doubled an octave up — they are two different
+whole-tone scales, interleaved in pitch (a lü-tier bell can sit between
+two lu-tier bells) but never sharing a pitch class.
 
-Why this matters, and it is the whole point of the design: the zhenggu
-pitches are a pentatonic scale (宫商角徵羽). Hit only centres and nothing
-can clash. The cegu pitches are where ruibin and yingzhong come in — the
-notes outside the pentatonic. The extra colour is on the corners of the
-bells, not on extra bells. That is historically what the second tone was
-for.
+The twelve bells. Lower tier (1-6): the six lu. Upper tier (7-12): the six
+lü.
+
+    #   zhenggu             ratio         cegu               ratio          interval
+    1   huangzhong 黄钟     1/1           guxian 姑洗        81/64          major
+    2   taicu 太簇          9/8           ruibin 蕤宾        729/512        major
+    3   guxian 姑洗         81/64         yize 夷则          6561/4096      major
+    4   ruibin 蕤宾         729/512       wuyi 无射          59049/32768    major
+    5   yize 夷则           6561/4096     yingzhong 应钟     243/128        minor
+    6   wuyi 无射           59049/32768   dalü 大吕          2187/1024      minor
+    7   dalü 大吕           2187/2048     zhonglü 仲吕       177147/131072  major
+    8   jiazhong 夹钟       19683/16384   ruibin 蕤宾        729/512        minor
+    9   zhonglü 仲吕        177147/131072 yize 夷则          6561/4096      minor
+    10  linzhong 林钟       3/2           yingzhong 应钟     243/128        major
+    11  nanlü 南吕          27/16         huangzhong 黄钟    2/1            minor
+    12  yingzhong 应钟      243/128       jiazhong 夹钟      19683/8192     major
+
+(Bells 6 and 12's cegu are written an octave up from their base lü row —
+2187/1024 and 19683/8192 rather than 2187/2048 and 19683/16384 — to keep
+every cegu above its own zhenggu.)
+
+Why this matters, and it is the whole point of the design: hit only the
+home row (the six lu) and nothing can clash — it's one whole-tone scale.
+Hit only the row above (the six lü) and the same holds for that scale.
+Move between rows and the two whole-tone scales interleave, giving all
+twelve lü rather than a five-note subset. The cegu corners add a third
+above each zhenggu, same as before. spec/crit-4.test.ts's "Part A
+verification" describe block checks the whole-tone-step and even/odd
+properties directly against the fractions in the table above.
 
 Starting frequency for huangzhong: 261.63 Hz. This is a guess and is to be
 tuned by ear. Flag it in the code as such.
 
 # Labels
 
-Each bell carries its zhenggu lü name in Chinese characters: 黄钟 太簇
-姑洗 林钟 南吕, repeated across the two tiers, exactly as the same lü names
-repeat across tiers on the real rack. No pinyin on the bell. No Western
-note names anywhere in the interface.
+Each bell's zhenggu lü name — in Chinese characters, one of the twelve:
+黄钟 大吕 太簇 夹钟 姑洗 仲吕 蕤宾 林钟 夷则 南吕 无射 应钟, each name
+appearing exactly once (the twelve-bell instrument no longer repeats
+names across tiers, unlike the ten-bell version) — sits in a caption
+below the bell, in the frame, with its romanisation beneath it: a museum
+caption under an object, not type painted on the bell itself. The bell
+face carries no text of any kind — bands, bosses and the three strike
+marks only. No Western note names anywhere in the interface.
 
 # Opening
 
 The page opens with one bell. Nothing else. No overlay, no "click to enable
 sound" button, no instructions.
 
+That one bell already carries its three strike marks — one at the centre,
+one at each corner — the moment it's on the page. They are not staged or
+revealed by anything; they're permanent markup (index.html) styled by
+styles.css, present for every bell from the instant it exists in the DOM.
+
 The first pointerdown does three things at once: creates and resumes the
-AudioContext, strikes that bell, and then reveals two faint strike marks on
-the bell — one at the centre, one at the corner. The marks fade out after a
-few seconds. Then the other nine bells fade in.
+AudioContext, strikes that bell, and reveals the other eleven bells, which
+fade in in place. This is immediate and unconditional — any strike at all
+reveals the rest, not a particular corner strike, and not after a timeout.
+src/reveal.ts is the state machine for this: two states ("waiting",
+"revealed"), one event ("strike"), one transition, and "revealed" is
+terminal. See its Module contract entry below.
 
 The browser requires a user gesture before audio can start. That
 requirement is the opening screen, not an obstacle to it.
@@ -116,23 +161,73 @@ latency as something judged by hand, so the first strike is fired
 optimistically. If the context does not start, the sound is lost — that
 is the accepted cost.
 
+# Small screens, and fitting the screen
+
+Two different rules, keyed to two different things — a pointer type, and
+a viewport size — not one breakpoint doing both jobs.
+
+Under a fine pointer, bells are graded in width by pitch (src/scale.ts) —
+this is size-as-pitch, a visual cue for register. Under a coarse (touch)
+pointer, that grading is dropped: every bell renders at the 132px
+minimum, in two columns, and the rack is allowed to scroll rather than
+shrink further.
+
+Ava's decision, verbatim: "on a phone the scarce thing is aimable target
+width, and three 44px zones need 132px. Graded sizes would push the
+smallest bells below that. Size-as-pitch is a nice cue; a target you
+cannot hit is a broken instrument. The cue loses."
+
+That reasoning is about touch targets, not about narrow windows — a small
+laptop window is exactly as narrow as a phone but is driven by a mouse,
+which doesn't need 132px. So the rule is gated on `@media (pointer:
+coarse)`, not viewport width. spec/crit-4.test.ts checks this precisely:
+exactly two grid columns, and every --bell-w declaration in that block
+reading exactly 132px.
+
+Under a fine pointer (mouse/trackpad), there's no width floor — instead
+the whole rack is sized to fit the viewport without scrolling:
+
+    available rack height = 0.72 * viewport height
+    row height            = (available - row gap) / 2
+    bell height           = row height - caption strip height
+    bell width            = bell height / 1.6
+
+and the smaller of that and each bell's own graded width wins, whichever
+is scarcer. This is `@media (pointer: fine)` in styles.css. A one-time,
+console-only diagnostic in src/ui.ts checks on load whether the page
+still needed to scroll, in case the formula above doesn't hold in
+practice on a given browser/OS's real chrome.
+
+44px accessibility floor note: that floor belongs to the *hit region* —
+each bell's button is one third of the bell's own width, and the 132px
+minimum bell width already guarantees 132/3 = 44px there — not to the
+drawn strike mark, which is sized independently (0.16 of the bell's
+width, no floor of its own). See src/layout.ts.
+
 # Playing
 
 - Mouse and touch: pointerdown on a bell strikes it. The x position inside
   that bell sets the tone mix.
 - Sweep: hold and drag across the rack. A bell strikes when the pointer
   enters it. This is a glissando across the rack.
-- Keyboard: a s d f g h j k l ; strike the ten bells at their zhenggu point.
-  q w e r t y u i o p strike the same ten bells at their cegu point. The
-  row above gives the tone above. Each bell is also a real focusable
-  button; Enter and Space strike it at the centre.
+- Keyboard: four rows, read from physical key position, one row per
+  tier/tone combination:
 
-Keyboard handling reads event.code, not event.key. The mapping is to
-physical key positions — KeyA KeyS KeyD KeyF KeyG KeyH KeyJ KeyK KeyL
-Semicolon for zhenggu, KeyQ KeyW KeyE KeyR KeyT KeyY KeyU KeyI KeyO
-KeyP for cegu. The design's claim is that the row physically above
-gives the tone above, so the physical row is what must be read.
-Keydown events with event.repeat true are ignored.
+      Digit2 Digit3 Digit4 Digit5 Digit6 Digit7   upper tier (six lü), cegu
+      KeyW   KeyE   KeyR   KeyT   KeyY   KeyU     upper tier (six lü), zhenggu
+      KeyA   KeyS   KeyD   KeyF   KeyG   KeyH     lower tier (six lu), zhenggu
+      KeyZ   KeyX   KeyC   KeyV   KeyB   KeyN     lower tier (six lu), cegu
+
+  The home row (A S D F G H) is the six lu — the lower tier's zhenggu.
+  The row above it (W E R T Y U) is the six lü — the upper tier's
+  zhenggu. One row further out from home, in either direction, gives
+  that same bell's cegu: Z X C V B N below home for the lower tier,
+  2 3 4 5 6 7 above the W row for the upper tier. Each bell is also a
+  real focusable button; Enter and Space strike it at the centre.
+
+Keyboard handling reads event.code, not event.key. Twenty-four physical
+codes total, listed above. Keydown events with event.repeat true are
+ignored.
 
 # Timbre
 
@@ -145,7 +240,7 @@ Starting values, all to be tuned by ear and all marked as guesses:
     partial ratios   1, 2.0, 2.4, 3.0, 4.1, 5.4
     partial gains    1, 0.35, 0.28, 0.18, 0.10, 0.06
     decay multiplier 1, 0.7, 0.6, 0.45, 0.3, 0.22
-    decay time       4.5 s for bell 1 falling to 1.6 s for bell 10
+    decay time       4.5 s for bell 1 falling to 1.6 s for bell 12
     noise transient  about 8 ms
 
 Bianzhong damp faster than European church bells, which is what makes them
@@ -180,10 +275,10 @@ are the contract; fix whichever of the two is wrong.
         zhenggu: { name: string; ratio: number; freq: number };
         cegu:    { name: string; ratio: number; freq: number };
       }[]
-      // length 10, index 0 = bell 1. freq is ratio * HUANGZHONG_HZ (fixed
+      // length 12, index 0 = bell 1. freq is ratio * HUANGZHONG_HZ (fixed
       // by the Tuning section above; no test asserts this multiplication
-      // directly, only its consequences — ordering and the x2 relationship
-      // between bells 1-5 and 6-10).
+      // directly, only its consequences — ascending zhenggu order within
+      // each tier (bells 1-6, bells 7-12), not across the whole array).
 
     src/strike.ts
 
@@ -195,7 +290,7 @@ are the contract; fix whichever of the two is wrong.
 
       export function partials(
         fundamentalHz: number,
-        bellIndex: number,   // 1..10
+        bellIndex: number,   // 1..12
       ): { freq: number; gain: number; decay: number }[]
       // ps[0] is the fundamental: ps[0].freq === fundamentalHz exactly.
       // gains strictly descending, decays strictly descending (higher
@@ -205,17 +300,17 @@ are the contract; fix whichever of the two is wrong.
 
     src/reveal.ts
 
-      export type State = "waiting" | "marksShown" | "revealed"
-      export type Event = { type: "strike"; ceguGain: number } | { type: "tick" }
+      export type State = "waiting" | "revealed"
+      export type Event = { type: "strike" }
       export const INITIAL_STATE: State
-      export function transition(state: State, event: Event, elapsedMs: number): State
-      export function marksVisible(state: State): boolean
+      export function transition(state: State, event: Event): State
       export function rackVisible(state: State): boolean
-      // elapsedMs is time since marksShown was entered; ignored elsewhere.
-      // waiting -> marksShown on any strike. marksShown -> revealed on a
-      // corner strike (ceguGain over the module's own threshold) or once
-      // elapsedMs reaches the module's own timeout. revealed is terminal:
-      // no event or elapsedMs moves it back out.
+      // waiting -> revealed on any strike, immediately, no threshold and
+      // no timeout. revealed is terminal: no event moves it back out.
+      // The three strike marks are not part of this state machine — they
+      // are permanent, present on every bell from the moment it's in the
+      // DOM (see the Opening section above, and index.html/styles.css,
+      // not this file).
 
     src/audio.ts
 
@@ -229,24 +324,24 @@ are the contract; fix whichever of the two is wrong.
     The page (built to dist/index.html)
 
       In the initial DOM: exactly one bell carries no inert attribute
-      (bell 1) and the other nine carry inert.
+      (bell 1) and the other eleven carry inert.
 
       Each bell: <button data-bell="…"> — a real, focusable, never-disabled
       button, with a non-empty accessible name (text content or
       aria-label), carrying:
         data-key-zhenggu="<KeyboardEvent.code>"
         data-key-cegu="<KeyboardEvent.code>"
-      Both values must be among the twenty physical codes in the Playing
-      section above; across all ten bells the twenty values are distinct.
-      No <audio> or <video> element anywhere. No text or markup anywhere
-      in the body matching: score, points, level, lives, wrong, correct,
-      retry, game over.
+      Both values must be among the twenty-four physical codes in the
+      Playing section above; across all twelve bells the twenty-four
+      values are distinct. No <audio> or <video> element anywhere. No
+      text or markup anywhere in the body matching: score, points, level,
+      lives, wrong, correct, retry, game over.
 
 Open questions the tests don't decide:
 
-  - The exact string(s) held in data-bell — only that ten buttons match
-    the selector `button[data-bell]`, not that the values are "1".."10",
-    zero-indexed, or in any particular DOM order.
+  - The exact string(s) held in data-bell — only that twelve buttons
+    match the selector `button[data-bell]`, not that the values are
+    "1".."12", zero-indexed, or in any particular DOM order.
   - Whether createEngine()'s default-argument path (omitting
     AudioContextCtor and falling back to globalThis.AudioContext) is
     exercised anywhere — every current test passes a fake constructor

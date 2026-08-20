@@ -73,11 +73,20 @@ property. Propose moving the boundary — inject the dependency — before
 you conclude it is untestable.
 
 ## Writing
-Ava writes the words. Use her text verbatim.
-- Do not merge her short sentences into paragraphs.
-- Do not make her English more professional.
-- Do not add explanatory prose she did not write.
-- If a string is missing, ask. Do not draft one.
+Explanatory copy, headings, button labels, link labels and page
+titles on both index.html and about.html — you may draft. I will
+edit it. Draft it plainly, in short sentences, and do not make it
+sound impressive.
+
+PROCESS.md and reflections/crit-4.md: you may write these from the
+raw notebook Ava supplies. You may not invent an event, a number, a
+quotation or a commit that is not in the notebook or in this repo's
+history. Anything you cannot tie to a real commit or a real command
+output is left out, not smoothed over. Ava reads every line and cuts
+anything she cannot account for out loud.
+
+Wherever I have given you a string verbatim, it stays verbatim. Do
+not merge my short sentences into paragraphs.
 
 ## Facts
 Every historical or acoustic claim about the bianzhong goes in
